@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./api
+    container_name: ft_transcendence_api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+    networks:
+      - app-network
+
+  web:
+    # B tarafından yapılacak, şimdilik placeholder
+    build: ./web
+    container_name: ft_transcendence_web
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    networks:
+      - app-network
+
+  nginx:
+    # Nginx config B tarafından yapılacak
+    image: nginx:alpine
+    container_name: ft_transcendence_nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - app-network
+
+volumes:
+  sqlite-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
