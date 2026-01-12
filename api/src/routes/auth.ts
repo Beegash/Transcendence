@@ -224,4 +224,150 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			},
 		});
 	});
+
+	/**
+	 * DELETE /account
+	 * Delete current user's account (GDPR Right to Erasure)
+	 */
+	fastify.delete('/account', { preHandler: authMiddleware }, async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({ error: 'Not authenticated' });
+		}
+
+		const userId = request.user.userId;
+
+		try {
+			// Log the deletion for GDPR audit
+			db.prepare(`
+				INSERT INTO audit_log (user_id, action, details)
+				VALUES (?, 'account_delete', '{"reason": "user_request"}')
+			`).run(userId);
+
+			// Delete user data (cascades to user_stats, sessions, friendships)
+			db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+
+			// Clear cookie
+			reply.clearCookie('token', { path: '/' });
+
+			return reply.send({ message: 'Account deleted successfully' });
+		} catch (error) {
+			fastify.log.error(error);
+			return reply.status(500).send({ error: 'Failed to delete account' });
+		}
+	});
+
+	/**
+	 * GET /export-data
+	 * Export all user data (GDPR Right to Data Portability)
+	 */
+	fastify.get('/export-data', { preHandler: authMiddleware }, async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({ error: 'Not authenticated' });
+		}
+
+		const userId = request.user.userId;
+
+		try {
+			// Get user data
+			const user = db.prepare(`
+				SELECT id, email, username, display_name, avatar_url, language, created_at
+				FROM users WHERE id = ?
+			`).get(userId);
+
+			// Get user stats
+			const stats = db.prepare('SELECT * FROM user_stats WHERE user_id = ?').get(userId);
+
+			// Get match history
+			const matches = db.prepare(`
+				SELECT id, player1_id, player2_id, player1_score, player2_score,
+					winner_id, match_type, started_at, ended_at
+				FROM matches
+				WHERE player1_id = ? OR player2_id = ?
+				ORDER BY ended_at DESC
+			`).all(userId, userId);
+
+			// Get friendships
+			const friends = db.prepare(`
+				SELECT f.*, u.username as friend_username
+				FROM friendships f
+				JOIN users u ON (f.friend_id = u.id AND f.user_id = ?) OR (f.user_id = u.id AND f.friend_id = ?)
+				WHERE f.user_id = ? OR f.friend_id = ?
+			`).all(userId, userId, userId, userId);
+
+			// Get tournaments
+			const tournaments = db.prepare(`
+				SELECT tp.*, t.name as tournament_name
+				FROM tournament_participants tp
+				JOIN tournaments t ON tp.tournament_id = t.id
+				WHERE tp.user_id = ?
+			`).all(userId);
+
+			// Log export
+			db.prepare(`
+				INSERT INTO audit_log (user_id, action, details)
+				VALUES (?, 'data_export', '{}')
+			`).run(userId);
+
+			const exportData = {
+				exportDate: new Date().toISOString(),
+				user,
+				stats,
+				matches,
+				friends,
+				tournaments,
+			};
+
+			reply.header('Content-Type', 'application/json');
+			reply.header('Content-Disposition', `attachment; filename="pong_data_${userId}.json"`);
+			return reply.send(exportData);
+		} catch (error) {
+			fastify.log.error(error);
+			return reply.status(500).send({ error: 'Failed to export data' });
+		}
+	});
+
+	/**
+	 * POST /anonymize
+	 * Anonymize user data (GDPR Right to be Forgotten - partial)
+	 */
+	fastify.post('/anonymize', { preHandler: authMiddleware }, async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({ error: 'Not authenticated' });
+		}
+
+		const userId = request.user.userId;
+		const anonymizedUsername = `deleted_user_${userId}`;
+		const anonymizedEmail = `deleted_${userId}@anonymous.local`;
+
+		try {
+			// Anonymize user data
+			db.prepare(`
+				UPDATE users SET
+					email = ?,
+					username = ?,
+					display_name = 'Deleted User',
+					password_hash = NULL,
+					avatar_url = '/default-avatar.png',
+					oauth_provider = NULL,
+					oauth_id = NULL,
+					is_anonymized = TRUE,
+					updated_at = CURRENT_TIMESTAMP
+				WHERE id = ?
+			`).run(anonymizedEmail, anonymizedUsername, userId);
+
+			// Log anonymization
+			db.prepare(`
+				INSERT INTO audit_log (user_id, action, details)
+				VALUES (?, 'account_anonymize', '{}')
+			`).run(userId);
+
+			// Clear cookie
+			reply.clearCookie('token', { path: '/' });
+
+			return reply.send({ message: 'Account anonymized successfully' });
+		} catch (error) {
+			fastify.log.error(error);
+			return reply.status(500).send({ error: 'Failed to anonymize account' });
+		}
+	});
 }

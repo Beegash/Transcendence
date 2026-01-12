@@ -27,7 +27,11 @@ export function renderNavbar(): void {
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
           <a href="/" data-link class="flex items-center space-x-2">
-            <span class="text-2xl">🏓</span>
+            <svg class="w-8 h-8 text-pong-primary" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="2" y="8" width="3" height="8" rx="1"/>
+              <rect x="19" y="8" width="3" height="8" rx="1"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
             <span class="font-game text-xl font-bold text-gradient">PONG</span>
           </a>
 
@@ -36,6 +40,7 @@ export function renderNavbar(): void {
             <a href="/" data-link class="nav-link ${currentPath === '/' ? 'nav-link-active' : ''}">${t('nav.home')}</a>
             <a href="/game" data-link class="nav-link ${currentPath === '/game' ? 'nav-link-active' : ''}">${t('nav.play')}</a>
             <a href="/tournament" data-link class="nav-link ${currentPath === '/tournament' ? 'nav-link-active' : ''}">${t('nav.tournament')}</a>
+            <a href="/dashboard" data-link class="nav-link ${currentPath === '/dashboard' ? 'nav-link-active' : ''}">${t('nav.dashboard') || 'Dashboard'}</a>
             ${isLoggedIn ? `<a href="/profile" data-link class="nav-link ${currentPath === '/profile' ? 'nav-link-active' : ''}">${t('nav.profile')}</a>` : ''}
           </div>
 
@@ -100,6 +105,7 @@ export function renderNavbar(): void {
           <a href="/" data-link class="block nav-link">${t('nav.home')}</a>
           <a href="/game" data-link class="block nav-link">${t('nav.play')}</a>
           <a href="/tournament" data-link class="block nav-link">${t('nav.tournament')}</a>
+          <a href="/dashboard" data-link class="block nav-link">${t('nav.dashboard') || 'Dashboard'}</a>
           ${isLoggedIn ? `
             <a href="/profile" data-link class="block nav-link">${t('nav.profile')}</a>
             <a href="/settings" data-link class="block nav-link">${t('nav.settings')}</a>

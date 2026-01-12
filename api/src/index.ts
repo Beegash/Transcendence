@@ -9,6 +9,8 @@ import fastifyWebsocket from "@fastify/websocket";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import gameRoutes from "./routes/game.js";
+import tournamentRoutes from "./routes/tournament.js";
+import statsRoutes from "./routes/stats.js";
 
 const app = Fastify({ logger: true });
 
@@ -33,6 +35,8 @@ await app.register(fastifyWebsocket);
 await app.register(authRoutes, { prefix: '/auth' });
 await app.register(userRoutes, { prefix: '/users' });
 await app.register(gameRoutes, { prefix: '/game' });
+await app.register(tournamentRoutes, { prefix: '/tournaments' });
+await app.register(statsRoutes, { prefix: '/stats' });
 
 // Health check endpoint
 app.get("/", async () => {

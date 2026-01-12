@@ -13,6 +13,7 @@ import { renderGamePage } from './pages/game';
 import { renderProfilePage } from './pages/profile';
 import { renderTournamentPage } from './pages/tournament';
 import { renderSettingsPage } from './pages/settings';
+import { renderDashboardPage } from './pages/dashboard';
 import { renderNotFoundPage } from './pages/404';
 import { renderNavbar } from './components/navbar';
 
@@ -51,6 +52,8 @@ function init(): void {
 		.addRoute('/profile', requireAuth(renderProfilePage), 'Profile')
 		.addRoute('/profile/:id', renderProfilePage, 'Profile')
 		.addRoute('/tournament', renderTournamentPage, 'Tournament')
+		.addRoute('/tournament/:id', renderTournamentPage, 'Tournament')
+		.addRoute('/dashboard', renderDashboardPage, 'Dashboard')
 		.addRoute('/settings', requireAuth(renderSettingsPage), 'Settings')
 		.setNotFound(renderNotFoundPage);
 

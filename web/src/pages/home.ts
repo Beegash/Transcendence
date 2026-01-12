@@ -6,20 +6,20 @@ import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';
 
 export function renderHomePage(): void {
-	renderNavbar();
+  renderNavbar();
 
-	const app = document.getElementById('app');
-	if (!app) return;
+  const app = document.getElementById('app');
+  if (!app) return;
 
-	// Get or create content container
-	let content = document.getElementById('page-content');
-	if (!content) {
-		content = document.createElement('div');
-		content.id = 'page-content';
-		app.appendChild(content);
-	}
+  // Get or create content container
+  let content = document.getElementById('page-content');
+  if (!content) {
+    content = document.createElement('div');
+    content.id = 'page-content';
+    app.appendChild(content);
+  }
 
-	content.innerHTML = `
+  content.innerHTML = `
     <!-- Hero Section -->
     <section class="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       <!-- Background Effects -->
@@ -37,10 +37,10 @@ export function renderHomePage(): void {
         
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a href="/game" data-link class="btn btn-primary text-lg px-8 py-4 glow animate-pulse-slow">
-            🎮 ${t('home.playNow')}
+            ${t('home.playNow')}
           </a>
           <a href="/tournament" data-link class="btn btn-secondary text-lg px-8 py-4">
-            🏆 ${t('home.joinTournament')}
+            ${t('home.joinTournament')}
           </a>
         </div>
       </div>
@@ -52,21 +52,33 @@ export function renderHomePage(): void {
         <div class="grid md:grid-cols-3 gap-8">
           <!-- Multiplayer -->
           <div class="card-hover text-center">
-            <div class="text-5xl mb-4">👥</div>
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-pong-primary/20 flex items-center justify-center">
+              <svg class="w-8 h-8 text-pong-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+            </div>
             <h3 class="font-game text-xl text-pong-primary mb-3">${t('home.features.multiplayer')}</h3>
             <p class="text-gray-400">${t('home.features.multiplayerDesc')}</p>
           </div>
 
           <!-- Tournaments -->
           <div class="card-hover text-center">
-            <div class="text-5xl mb-4">🏆</div>
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+              </svg>
+            </div>
             <h3 class="font-game text-xl text-pong-primary mb-3">${t('home.features.tournaments')}</h3>
             <p class="text-gray-400">${t('home.features.tournamentsDesc')}</p>
           </div>
 
           <!-- AI -->
           <div class="card-hover text-center">
-            <div class="text-5xl mb-4">🤖</div>
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+              <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+            </div>
             <h3 class="font-game text-xl text-pong-primary mb-3">${t('home.features.ai')}</h3>
             <p class="text-gray-400">${t('home.features.aiDesc')}</p>
           </div>
@@ -77,19 +89,21 @@ export function renderHomePage(): void {
     <!-- Pong Preview Section -->
     <section class="py-20 px-4">
       <div class="max-w-4xl mx-auto">
-        <div class="game-container aspect-video flex items-center justify-center">
-          <div class="text-center">
-            <div class="font-game text-6xl text-pong-primary/30 mb-4">PONG</div>
-            <p class="text-gray-500">${t('home.playNow')}</p>
+        <a href="/game" data-link class="block group cursor-pointer">
+          <div class="game-container aspect-video flex items-center justify-center group-hover:border-pong-primary/50 transition-colors duration-300">
+            <div class="text-center group-hover:scale-105 transition-transform duration-300">
+              <div class="font-game text-6xl text-pong-primary/30 group-hover:text-pong-primary/80 mb-4 transition-colors">PONG</div>
+              <p class="text-gray-500 group-hover:text-white transition-colors">${t('home.playNow')}</p>
+            </div>
           </div>
-        </div>
+        </a>
       </div>
     </section>
 
     <!-- Footer -->
     <footer class="py-8 border-t border-white/10">
       <div class="max-w-6xl mx-auto px-4 text-center text-gray-500">
-        <p>© 2024 ft_transcendence • 42 School Project</p>
+        <p>© ${new Date().getFullYear()} ft_transcendence • 42 School Project</p>
       </div>
     </footer>
   `;

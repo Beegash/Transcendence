@@ -1,11 +1,11 @@
 /**
  * Game Routes (WebSocket)
- * Handles real-time game communication
+ * Handles real-time game communication for multiplayer and AI
  */
 
 import { FastifyInstance } from 'fastify';
 import type { WebSocket } from 'ws';
-import { gameRoomManager } from '../services/gameRoom.js';
+import { roomManager } from '../game/index.js';
 import { verifyToken } from '../services/auth.js';
 
 interface WsMessage {
@@ -17,45 +17,42 @@ interface WsMessage {
 
 export default async function gameRoutes(fastify: FastifyInstance) {
 	/**
-	 * GET /rooms
-	 * Get list of available rooms
+	 * GET /rooms - List active rooms
 	 */
 	fastify.get('/rooms', async (_request, reply) => {
-		const rooms = gameRoomManager.getActiveRooms();
+		const rooms = roomManager.getActiveRooms();
 		return reply.send({ rooms });
 	});
 
 	/**
-	 * WebSocket /ws
-	 * Main game WebSocket endpoint
+	 * WebSocket /ws - Main game endpoint
 	 */
 	fastify.get('/ws', { websocket: true }, (connection, _req) => {
-		// Fastify WebSocket gives us a SocketStream, we need the actual WebSocket
 		const ws = connection.socket;
 		const playerId = Math.random().toString(36).substring(2, 15);
 		let currentRoomId: string | null = null;
 		let userId: number | undefined;
 		let username: string | undefined;
 
-		console.log(`Player ${playerId} connected via WebSocket`);
+		console.log(`Player ${playerId} connected`);
 
 		ws.on('message', (rawData: Buffer | ArrayBuffer | Buffer[]) => {
 			try {
 				const message: WsMessage = JSON.parse(rawData.toString());
 
-				// Authenticate if token provided
+				// Auth
 				if (message.token && !userId) {
 					const payload = verifyToken(message.token);
 					if (payload) {
 						userId = payload.userId;
 						username = payload.username;
-						console.log(`Player ${playerId} authenticated as ${username}`);
 					}
 				}
 
 				switch (message.type) {
+					// Create room for human vs human
 					case 'create_room': {
-						const room = gameRoomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username);
+						const room = roomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username);
 						currentRoomId = room.id;
 						ws.send(JSON.stringify({
 							type: 'room_created',
@@ -65,13 +62,26 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 						break;
 					}
 
+					// Create room for human vs AI
+					case 'create_ai_room': {
+						const room = roomManager.createAIRoom(ws as unknown as WebSocket, playerId, userId, username);
+						currentRoomId = room.id;
+						ws.send(JSON.stringify({
+							type: 'ai_room_created',
+							roomId: room.id,
+							player: 1,
+						}));
+						break;
+					}
+
+					// Join existing room
 					case 'join_room': {
 						if (!message.roomId) {
 							ws.send(JSON.stringify({ type: 'error', message: 'Room ID required' }));
 							break;
 						}
 
-						const room = gameRoomManager.joinRoom(
+						const room = roomManager.joinRoom(
 							message.roomId,
 							ws as unknown as WebSocket,
 							playerId,
@@ -85,17 +95,14 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 						}
 
 						currentRoomId = room.id;
-
-						// Notify player 2
 						ws.send(JSON.stringify({
 							type: 'room_joined',
 							roomId: room.id,
 							player: 2,
 						}));
 
-						// Notify player 1 that opponent joined
 						if (room.player1) {
-							room.player1.ws.send(JSON.stringify({
+							room.player1.ws?.send(JSON.stringify({
 								type: 'opponent_joined',
 								username: username || 'Anonymous',
 							}));
@@ -105,14 +112,14 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 
 					case 'ready': {
 						if (currentRoomId) {
-							gameRoomManager.setPlayerReady(currentRoomId, playerId);
+							roomManager.setPlayerReady(currentRoomId, playerId);
 						}
 						break;
 					}
 
 					case 'paddle_move': {
 						if (currentRoomId && typeof message.position === 'number') {
-							gameRoomManager.updatePaddle(currentRoomId, playerId, message.position);
+							roomManager.updatePaddle(currentRoomId, playerId, message.position);
 						}
 						break;
 					}
@@ -121,29 +128,22 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 						ws.send(JSON.stringify({ type: 'pong' }));
 						break;
 					}
-
-					default:
-						console.log(`Unknown message type: ${message.type}`);
 				}
 			} catch (error) {
-				console.error('WebSocket message error:', error);
-				ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+				console.error('WebSocket error:', error);
+				ws.send(JSON.stringify({ type: 'error', message: 'Invalid message' }));
 			}
 		});
 
 		ws.on('close', () => {
 			console.log(`Player ${playerId} disconnected`);
-			gameRoomManager.handleDisconnect(ws as unknown as WebSocket);
+			roomManager.handleDisconnect(ws as unknown as WebSocket);
 		});
 
 		ws.on('error', (error: Error) => {
-			console.error(`WebSocket error for player ${playerId}:`, error);
+			console.error(`WS error:`, error);
 		});
 
-		// Send welcome message
-		ws.send(JSON.stringify({
-			type: 'connected',
-			playerId,
-		}));
+		ws.send(JSON.stringify({ type: 'connected', playerId }));
 	});
 }

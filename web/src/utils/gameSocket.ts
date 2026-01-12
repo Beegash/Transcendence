@@ -121,6 +121,13 @@ class GameSocket {
 	}
 
 	/**
+	 * Create a room for AI game
+	 */
+	createAIRoom(): void {
+		this.send({ type: 'create_ai_room' });
+	}
+
+	/**
 	 * Join an existing room
 	 */
 	joinRoom(roomId: string): void {
