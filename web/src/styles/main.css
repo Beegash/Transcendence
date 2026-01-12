@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   ft_transcendence Global Styles
+   ======================================== */
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #050508 0%, #0a0a0f 50%, #0f0f1a 100%);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0f;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1a1a2e;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #00ff88;
+  }
+}
+
+@layer components {
+  /* Button styles */
+  .btn {
+    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300 cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply bg-pong-primary text-pong-darker hover:shadow-lg hover:shadow-pong-primary/50;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border-2 border-pong-primary text-pong-primary hover:bg-pong-primary hover:text-pong-darker;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-pong-light/50 backdrop-blur-md rounded-xl border border-pong-light p-6;
+  }
+
+  .card-hover {
+    @apply card hover:border-pong-primary/50 hover:shadow-lg hover:shadow-pong-primary/10 transition-all duration-300;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 bg-pong-dark border border-pong-light rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-pong-primary focus:ring-1 focus:ring-pong-primary transition-all duration-200;
+  }
+
+  /* Navigation link */
+  .nav-link {
+    @apply text-gray-400 hover:text-pong-primary transition-colors duration-200 font-medium;
+  }
+
+  .nav-link-active {
+    @apply text-pong-primary;
+  }
+
+  /* Glow effect */
+  .glow {
+    @apply shadow-lg shadow-pong-primary/30;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+
+  /* Game canvas container */
+  .game-container {
+    @apply relative bg-pong-darker rounded-xl border-2 border-pong-primary/30 overflow-hidden;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply w-8 h-8 border-4 border-pong-light border-t-pong-primary rounded-full animate-spin;
+  }
+
+  /* Badge */
+  .badge {
+    @apply px-3 py-1 text-sm rounded-full font-medium;
+  }
+
+  .badge-online {
+    @apply bg-green-500/20 text-green-400;
+  }
+
+  .badge-offline {
+    @apply bg-gray-500/20 text-gray-400;
+  }
+
+  .badge-playing {
+    @apply bg-pong-secondary/20 text-pong-secondary;
+  }
+}
+
+@layer utilities {
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-pong-primary to-pong-secondary bg-clip-text text-transparent;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  }
+
+  /* Neon border */
+  .neon-border {
+    box-shadow: 0 0 5px #00ff88, 0 0 10px #00ff88, inset 0 0 5px rgba(0, 255, 136, 0.1);
+  }
+}

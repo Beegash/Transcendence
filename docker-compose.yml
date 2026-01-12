@@ -1,45 +1,43 @@
-version: '3.8'
-
 services:
+  # Backend API - Fastify + Node.js
   api:
     build: ./api
     container_name: ft_transcendence_api
-    ports:
-      - "8080:8080"
     volumes:
-      - ./api:/app
-      - /app/node_modules
+      - sqlite-data:/data
     environment:
       - NODE_ENV=development
       - PORT=8080
+      - DATABASE_PATH=/data/app.db
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
     networks:
       - app-network
+    restart: unless-stopped
 
+  # Frontend - Vite + TypeScript + Tailwind
   web:
-    # B tarafından yapılacak, şimdilik placeholder
     build: ./web
     container_name: ft_transcendence_web
-    volumes:
-      - ./web:/app
-      - /app/node_modules
+    environment:
+      - NODE_ENV=development
     networks:
       - app-network
+    restart: unless-stopped
 
+  # Nginx Reverse Proxy with HTTPS
   nginx:
-    # Nginx config B tarafından yapılacak
-    image: nginx:alpine
+    build: ./nginx
     container_name: ft_transcendence_nginx
     ports:
       - "443:443"
       - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - api
       - web
     networks:
       - app-network
+    restart: unless-stopped
 
 volumes:
   sqlite-data:

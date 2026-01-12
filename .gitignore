@@ -1,0 +1,55 @@
+# dependency'ler
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Env dossyaları 
+.env
+.env.local
+.env.*.local
+
+# DB dosyaları
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+
+# sertifikalar
+nginx/certs/*.key
+nginx/certs/*.crt
+nginx/certs/*.pem
+*.key
+*.crt
+*.pem
+
+# log dosyaları
+logs/
+*.log
+npm-debug.log*
+
+# gereksiz
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# test dosyaları
+coverage/
+.nyc_output/
+
+#temp
+tmp/
+temp/
+*.tmp
