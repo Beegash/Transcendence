@@ -24,15 +24,11 @@ export function renderNavbar(): void {
   navContainer.innerHTML = `
     <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
+        <div class="flex items-center justify-between h-24">
           <!-- Logo -->
-          <a href="/" data-link class="flex items-center space-x-2">
-            <svg class="w-8 h-8 text-pong-primary" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="2" y="8" width="3" height="8" rx="1"/>
-              <rect x="19" y="8" width="3" height="8" rx="1"/>
-              <circle cx="12" cy="12" r="2"/>
-            </svg>
-            <span class="font-game text-xl font-bold text-gradient">PONG</span>
+          <a href="/" data-link class="flex items-center space-x-4">
+            <img src="/logo.png" alt="Transcendencer Supreme" class="h-20 w-auto animate-float" />
+            <span class="font-game text-xl font-bold text-pong-primary glow-text tracking-wider">TRANSCENDER★★★SUPREME</span>
           </a>
 
           <!-- Navigation Links -->
@@ -117,13 +113,26 @@ export function renderNavbar(): void {
         </div>
       </div>
     </nav>
-    <div class="h-16"></div> <!-- Spacer for fixed navbar -->
+    <div class="h-24"></div> <!-- Spacer for fixed navbar -->
   `;
 
   // Language selector event
   const langSelector = document.getElementById('language-selector') as HTMLSelectElement;
   langSelector?.addEventListener('change', (e) => {
     const target = e.target as HTMLSelectElement;
+
+    // Check if user is in a game
+    const currentPath = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    const isInGame = currentPath === '/game' && (urlParams.has('mode') || urlParams.has('matchId'));
+
+    if (isInGame) {
+      // Show warning and revert selection
+      alert(t('game.langChangeWarning'));
+      target.value = i18n.getLanguage();
+      return;
+    }
+
     i18n.setLanguage(target.value as Language);
     renderNavbar();
   });

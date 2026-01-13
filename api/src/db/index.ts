@@ -9,6 +9,7 @@ const __dirname = dirname(__filename);
 const db = new Database(process.env.DATABASE_PATH || "/data/app.db");
 
 db.pragma("journal_mode = WAL");
+db.pragma("busy_timeout = 5000");
 
 export function initDatabase() {
     try {

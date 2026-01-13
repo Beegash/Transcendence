@@ -11,7 +11,7 @@ export interface Tournament {
 	status: 'pending' | 'active' | 'completed' | 'cancelled';
 	max_players: number;
 	current_round: number;
-	created_by: number | null;
+	created_by: number; // Mandatory for tournaments
 	winner_id: number | null;
 	started_at: string | null;
 	ended_at: string | null;
@@ -78,13 +78,20 @@ export function getAllTournaments(status?: string): Tournament[] {
 }
 
 /**
- * Join tournament with alias
+ * Join tournament with system username
  */
-export function joinTournament(tournamentId: number, alias: string, userId?: number): TournamentParticipant | null {
+export function joinTournament(tournamentId: number, userId: number): TournamentParticipant | null {
 	const tournament = getTournamentById(tournamentId);
 	if (!tournament || tournament.status !== 'pending') {
 		return null;
 	}
+
+	// Get user's username
+	const userStmt = db.prepare('SELECT username FROM users WHERE id = ?');
+	const user = userStmt.get(userId) as { username: string } | null;
+	if (!user) return null;
+
+	const alias = user.username;
 
 	// Check if tournament is full
 	const participants = getParticipants(tournamentId);
@@ -92,18 +99,10 @@ export function joinTournament(tournamentId: number, alias: string, userId?: num
 		return null;
 	}
 
-	// Check if alias is taken
-	const aliasExists = participants.some(p => p.alias.toLowerCase() === alias.toLowerCase());
-	if (aliasExists) {
-		return null;
-	}
-
 	// Check if user already joined
-	if (userId) {
-		const userJoined = participants.some(p => p.user_id === userId);
-		if (userJoined) {
-			return null;
-		}
+	const userJoined = participants.some(p => p.user_id === userId);
+	if (userJoined) {
+		return null;
 	}
 
 	const stmt = db.prepare(`
@@ -111,18 +110,33 @@ export function joinTournament(tournamentId: number, alias: string, userId?: num
     VALUES (?, ?, ?, ?)
   `);
 	const seed = participants.length + 1;
-	const result = stmt.run(tournamentId, userId || null, alias, seed);
+	const result = stmt.run(tournamentId, userId, alias, seed);
 
 	return {
 		id: result.lastInsertRowid as number,
 		tournament_id: tournamentId,
-		user_id: userId || null,
+		user_id: userId,
 		alias,
 		seed,
 		final_position: null,
 		is_eliminated: false,
 		created_at: new Date().toISOString(),
 	};
+}
+
+/**
+ * Remove participant from tournament
+ */
+export function removeParticipant(tournamentId: number, userId: number): boolean {
+	const tournament = getTournamentById(tournamentId);
+	if (!tournament || tournament.status !== 'pending') {
+		return false;
+	}
+
+	const stmt = db.prepare('DELETE FROM tournament_participants WHERE tournament_id = ? AND user_id = ?');
+	const result = stmt.run(tournamentId, userId);
+
+	return result.changes > 0;
 }
 
 /**
@@ -172,6 +186,9 @@ function generateBracket(tournamentId: number, participants: TournamentParticipa
 	const numPlayers = shuffled.length;
 	const totalRounds = Math.ceil(Math.log2(numPlayers));
 
+	// Track bye matches to process after all rounds are created
+	const byeMatches: { matchNumber: number; player: TournamentParticipant }[] = [];
+
 	// First round matches
 	let matchNumber = 1;
 	for (let i = 0; i < shuffled.length; i += 2) {
@@ -194,7 +211,7 @@ function generateBracket(tournamentId: number, participants: TournamentParticipa
 				'pending'
 			);
 		} else {
-			// Bye - player1 auto-advances
+			// Bye - mark as completed but don't advance yet
 			stmt.run(
 				tournamentId, 1, matchNumber,
 				player1.user_id, null,
@@ -207,11 +224,14 @@ function generateBracket(tournamentId: number, participants: TournamentParticipa
         WHERE tournament_id = ? AND tournament_round = ? AND tournament_match_number = ?
       `);
 			matchStmt.run(player1.user_id, tournamentId, 1, matchNumber);
+
+			// Queue for advancement after all rounds are created
+			byeMatches.push({ matchNumber, player: player1 });
 		}
 		matchNumber++;
 	}
 
-	// Create placeholder matches for future rounds
+	// Create placeholder matches for future rounds FIRST
 	let matchesInRound = Math.ceil(numPlayers / 2);
 	for (let round = 2; round <= totalRounds; round++) {
 		matchesInRound = Math.ceil(matchesInRound / 2);
@@ -224,6 +244,11 @@ function generateBracket(tournamentId: number, participants: TournamentParticipa
       `);
 			stmt.run(tournamentId, round, m);
 		}
+	}
+
+	// NOW process byes - all future round matches exist
+	for (const bye of byeMatches) {
+		advanceWinner(tournamentId, 1, bye.matchNumber, bye.player.user_id, bye.player.alias);
 	}
 }
 
@@ -250,6 +275,14 @@ export function getCurrentMatch(tournamentId: number): TournamentMatch | null {
     LIMIT 1
   `);
 	return stmt.get(tournamentId) as TournamentMatch | null;
+}
+
+/**
+ * Get match by ID
+ */
+export function getMatchById(matchId: number): TournamentMatch | null {
+	const stmt = db.prepare('SELECT * FROM matches WHERE id = ?');
+	return stmt.get(matchId) as TournamentMatch | null;
 }
 
 /**
@@ -357,20 +390,58 @@ function advanceWinner(
 		updateStmt.run(winnerId, winnerAlias, tournamentId, nextRound, nextMatchNumber);
 	}
 
-	// Check if next match is ready to play (both players set)
-	const readyStmt = db.prepare(`
-    SELECT * FROM matches 
-    WHERE tournament_id = ? AND tournament_round = ? AND tournament_match_number = ?
-    AND player1_alias IS NOT NULL AND player2_alias IS NOT NULL
-  `);
-	const readyMatch = readyStmt.get(tournamentId, nextRound, nextMatchNumber);
+	// Check if ALL matches in currentRound are completed before advancing current_round
+	const pendingMatchesInRound = db.prepare(`
+    SELECT COUNT(*) as count FROM matches 
+    WHERE tournament_id = ? AND tournament_round = ? AND status != 'completed'
+  `).get(tournamentId, currentRound) as { count: number };
 
-	if (readyMatch) {
+	if (pendingMatchesInRound.count === 0) {
 		// Update tournament current round
 		const roundStmt = db.prepare(`
       UPDATE tournaments SET current_round = ? WHERE id = ? AND current_round < ?
     `);
 		roundStmt.run(nextRound, tournamentId, nextRound);
+
+		// Check for byes in next round - matches where only one player is assigned
+		checkAndProcessByes(tournamentId, nextRound);
+	}
+}
+
+/**
+ * Check for bye scenarios in a round and auto-advance lone players
+ */
+function checkAndProcessByes(tournamentId: number, roundNumber: number): void {
+	const matchesStmt = db.prepare(`
+    SELECT * FROM matches 
+    WHERE tournament_id = ? AND tournament_round = ? AND status = 'pending'
+  `);
+	const matches = matchesStmt.all(tournamentId, roundNumber) as TournamentMatch[];
+
+	for (const match of matches) {
+		const hasPlayer1 = match.player1_id !== null;
+		const hasPlayer2 = match.player2_id !== null;
+
+		// Bye: only one player, auto-advance them
+		if (hasPlayer1 && !hasPlayer2) {
+			// Player1 gets a bye
+			const updateStmt = db.prepare(`
+        UPDATE matches SET winner_id = ?, player1_score = 5, player2_score = 0, 
+        status = 'completed', ended_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+			updateStmt.run(match.player1_id, match.id);
+			advanceWinner(tournamentId, roundNumber, match.tournament_match_number, match.player1_id, match.player1_alias);
+		} else if (!hasPlayer1 && hasPlayer2) {
+			// Player2 gets a bye
+			const updateStmt = db.prepare(`
+        UPDATE matches SET winner_id = ?, player1_score = 0, player2_score = 5, 
+        status = 'completed', ended_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+			updateStmt.run(match.player2_id, match.id);
+			advanceWinner(tournamentId, roundNumber, match.tournament_match_number, match.player2_id, match.player2_alias);
+		}
 	}
 }
 

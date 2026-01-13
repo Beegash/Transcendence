@@ -22,6 +22,7 @@ export interface GameMessage {
 	winner?: 1 | 2;
 	message?: string;
 	username?: string;
+	tournamentId?: number;
 }
 
 class GameSocket {

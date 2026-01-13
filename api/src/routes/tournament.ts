@@ -6,6 +6,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import * as tournamentService from '../services/tournament.js';
 import { verifyToken } from '../services/auth.js';
+import { tournamentDispatcher, TOURNAMENT_UPDATED } from '../services/tournamentEvents.js';
 
 interface CreateTournamentBody {
 	name: string;
@@ -86,7 +87,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 	});
 
 	/**
-	 * POST /:id/join - Join tournament with alias
+	 * POST /:id/join - Join tournament
 	 */
 	fastify.post('/:id/join', async (request: FastifyRequest, reply: FastifyReply) => {
 		const authHeader = request.headers.authorization;
@@ -101,32 +102,61 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		}
 
 		const { id } = request.params as { id: string };
-		const { alias } = request.body as JoinTournamentBody;
-
-		if (!alias || alias.trim().length < 1) {
-			return reply.status(400).send({ error: 'Alias is required' });
-		}
-
-		if (alias.trim().length > 20) {
-			return reply.status(400).send({ error: 'Alias must be 20 characters or less' });
-		}
-
-		// Check if user already joined
 		const tournamentId = parseInt(id);
-		const participants = tournamentService.getParticipants(tournamentId);
-		if (participants.some(p => p.user_id === payload.userId)) {
-			return reply.status(400).send({ error: 'You have already joined this tournament' });
-		}
 
-		const participant = tournamentService.joinTournament(tournamentId, alias.trim(), payload.userId);
+		const participant = tournamentService.joinTournament(tournamentId, payload.userId);
 
 		if (!participant) {
 			return reply.status(400).send({
-				error: 'Could not join tournament. It may be full, already started, or alias is taken.'
+				error: 'Could not join tournament. It may be full, already started, or you have already joined.'
 			});
 		}
 
+		// Notify subscribers
+		tournamentDispatcher.emit(TOURNAMENT_UPDATED, { tournamentId });
+
 		return reply.status(201).send({ participant });
+	});
+
+	/**
+	 * DELETE /:id/participants/:userId - Remove participant
+	 */
+	fastify.delete('/:id/participants/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
+		const authHeader = request.headers.authorization;
+		if (!authHeader?.startsWith('Bearer ')) {
+			return reply.status(401).send({ error: 'Authentication required' });
+		}
+
+		const token = authHeader.slice(7);
+		const payload = verifyToken(token);
+		if (!payload) {
+			return reply.status(401).send({ error: 'Invalid token' });
+		}
+
+		const { id, userId } = request.params as { id: string; userId: string };
+		const tournamentId = parseInt(id);
+		const targetUserId = parseInt(userId);
+
+		const tournament = tournamentService.getTournamentById(tournamentId);
+		if (!tournament) {
+			return reply.status(404).send({ error: 'Tournament not found' });
+		}
+
+		// Only creator can remove participants
+		if (tournament.created_by !== payload.userId) {
+			return reply.status(403).send({ error: 'Only the creator can remove participants' });
+		}
+
+		const success = tournamentService.removeParticipant(tournamentId, targetUserId);
+
+		if (!success) {
+			return reply.status(400).send({ error: 'Could not remove participant' });
+		}
+
+		// Notify subscribers
+		tournamentDispatcher.emit(TOURNAMENT_UPDATED, { tournamentId });
+
+		return reply.send({ message: 'Participant removed' });
 	});
 
 	/**
@@ -164,6 +194,9 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 			});
 		}
 
+		// Notify subscribers
+		tournamentDispatcher.emit(TOURNAMENT_UPDATED, { tournamentId });
+
 		const bracket = tournamentService.getBracket(tournamentId);
 		return reply.send({ message: 'Tournament started', bracket });
 	});
@@ -186,7 +219,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 	 * POST /:id/match/:matchId/result - Record match result
 	 */
 	fastify.post('/:id/match/:matchId/result', async (request: FastifyRequest, reply: FastifyReply) => {
-		const { matchId } = request.params as { id: string; matchId: string };
+		const { id, matchId } = request.params as { id: string; matchId: string };
 		const { player1Score, player2Score } = request.body as RecordResultBody;
 
 		if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
@@ -202,6 +235,9 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		if (!success) {
 			return reply.status(400).send({ error: 'Could not record result' });
 		}
+
+		// Notify subscribers
+		tournamentDispatcher.emit(TOURNAMENT_UPDATED, { tournamentId: parseInt(id) });
 
 		return reply.send({ message: 'Result recorded' });
 	});

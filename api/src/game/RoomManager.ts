@@ -49,10 +49,10 @@ class RoomManager {
 	/**
 	 * Create new room for human vs human
 	 */
-	createRoom(ws: WebSocket, playerId: string, userId?: number, username?: string): GameRoom {
-		const roomId = this.generateRoomId();
+	createRoom(ws: WebSocket | null, playerId: string, userId?: number, username?: string, customRoomId?: string, forceSlot?: 1 | 2): GameRoom {
+		const roomId = customRoomId || this.generateRoomId();
 
-		const player1: Player = {
+		const player: Player = {
 			id: playerId,
 			ws,
 			userId,
@@ -64,8 +64,8 @@ class RoomManager {
 
 		const room: GameRoom = {
 			id: roomId,
-			player1,
-			player2: null,
+			player1: forceSlot === 2 ? null : player,
+			player2: forceSlot === 2 ? player : null,
 			state: {
 				ball: this.resetBall(),
 				score: { player1: 0, player2: 0 },
@@ -78,7 +78,7 @@ class RoomManager {
 		};
 
 		this.rooms.set(roomId, room);
-		console.log(`Room ${roomId} created`);
+		console.log(`Room ${roomId} created (Slot: ${forceSlot || 1})`);
 		return room;
 	}
 
@@ -130,11 +130,11 @@ class RoomManager {
 	/**
 	 * Join existing room
 	 */
-	joinRoom(roomId: string, ws: WebSocket, playerId: string, userId?: number, username?: string): GameRoom | null {
+	joinRoom(roomId: string, ws: WebSocket, playerId: string, userId?: number, username?: string, forceSlot?: 1 | 2): GameRoom | null {
 		const room = this.rooms.get(roomId);
-		if (!room || room.player2) return null;
+		if (!room) return null;
 
-		room.player2 = {
+		const player: Player = {
 			id: playerId,
 			ws,
 			userId,
@@ -144,8 +144,28 @@ class RoomManager {
 			isAI: false,
 		};
 
-		room.state.status = 'ready';
-		console.log(`Player ${playerId} joined room ${roomId}`);
+		if (forceSlot === 1) {
+			if (room.player1) return null;
+			room.player1 = player;
+		} else if (forceSlot === 2) {
+			if (room.player2) return null;
+			room.player2 = player;
+		} else {
+			// Auto assign
+			if (!room.player1) {
+				room.player1 = player;
+			} else if (!room.player2) {
+				room.player2 = player;
+			} else {
+				return null;
+			}
+		}
+
+		if (room.player1 && room.player2) {
+			room.state.status = 'ready';
+		}
+
+		console.log(`Player ${playerId} joined room ${roomId} as slot ${room.player1?.id === playerId ? 1 : 2}`);
 		return room;
 	}
 

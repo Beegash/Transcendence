@@ -19,12 +19,14 @@ const PADDLE_SPEED = 8;
 const BALL_SPEED = 5;
 const WINNING_SCORE = 5;
 
-type GameMode = 'menu' | 'local' | 'online-lobby' | 'online-waiting' | 'online-playing';
+type GameMode = 'menu' | 'local' | 'online-lobby' | 'online-waiting' | 'online-playing' | 'online-tournament';
 
 let currentMode: GameMode = 'menu';
 let animationFrameId: number | null = null;
 let playerNumber: 1 | 2 = 1;
 let currentRoomId: string | null = null;
+let currentTournamentId: number | null = null;
+let currentTournamentMatchId: number | null = null;
 
 // Cleanup function
 let cleanupFunctions: (() => void)[] = [];
@@ -49,18 +51,20 @@ export function renderGamePage(): void {
 	const urlParams = new URLSearchParams(window.location.search);
 	const mode = urlParams.get('mode');
 
-	if (mode === 'tournament') {
+	if (mode === 'online-tournament') {
 		const tournamentId = urlParams.get('tournamentId');
 		const matchId = urlParams.get('matchId');
-		const p1 = urlParams.get('p1');
-		const p2 = urlParams.get('p2');
 
 		if (tournamentId && matchId) {
-			startTournamentGame(content, parseInt(tournamentId), parseInt(matchId), p1 || 'Player 1', p2 || 'Player 2');
+			renderNavbar();
+			currentTournamentId = parseInt(tournamentId);
+			currentTournamentMatchId = parseInt(matchId);
+			startOnlineTournament(content, currentTournamentId, currentTournamentMatchId);
 			return;
 		}
 	}
 
+	renderNavbar();
 	currentMode = 'menu';
 	renderGameMenu(content);
 }
@@ -442,6 +446,17 @@ function showOnlineLobby(content: HTMLElement): void {
           </div>
         </div>
         
+        <!-- Available Rooms -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-game text-lg text-purple-400">Available Rooms</h3>
+            <button id="refresh-rooms-btn" class="text-gray-500 hover:text-white text-sm">↻ Refresh</button>
+          </div>
+          <div id="rooms-list" class="space-y-2">
+            <div class="text-center text-gray-500 text-sm py-4">Loading rooms...</div>
+          </div>
+        </div>
+        
         <div id="connection-status" class="text-center text-gray-500 text-sm"></div>
         <div id="lobby-error" class="hidden bg-red-500/10 text-red-400 px-4 py-3 rounded-lg text-sm"></div>
       </div>
@@ -450,20 +465,72 @@ function showOnlineLobby(content: HTMLElement): void {
 
 	const statusDiv = document.getElementById('connection-status')!;
 	const errorDiv = document.getElementById('lobby-error')!;
+	const roomsList = document.getElementById('rooms-list')!;
+
+	// Fetch available rooms
+	async function loadRooms() {
+		try {
+			const response = await fetch('/api/game/rooms');
+			const data = await response.json();
+			const rooms = data.rooms || [];
+
+			// Filter only waiting rooms (not AI, not playing)
+			const waitingRooms = rooms.filter((r: { status: string; isVsAI: boolean }) =>
+				r.status === 'waiting' && !r.isVsAI
+			);
+
+			if (waitingRooms.length === 0) {
+				roomsList.innerHTML = '<div class="text-center text-gray-500 text-sm py-4">No rooms available. Create one!</div>';
+			} else {
+				roomsList.innerHTML = waitingRooms.map((room: { id: string; players: number }) => `
+					<div class="flex items-center justify-between bg-pong-darker p-3 rounded-lg">
+						<div>
+							<span class="font-game text-pong-primary">${room.id}</span>
+							<span class="text-gray-500 text-xs ml-2">(${room.players}/2 players)</span>
+						</div>
+						<button class="btn btn-sm btn-primary join-room-quick" data-room="${room.id}">Join</button>
+					</div>
+				`).join('');
+
+				// Add click handlers for quick join
+				roomsList.querySelectorAll('.join-room-quick').forEach(btn => {
+					btn.addEventListener('click', () => {
+						const roomId = (btn as HTMLElement).dataset.room;
+						if (roomId) gameSocket.joinRoom(roomId);
+					});
+				});
+			}
+		} catch {
+			roomsList.innerHTML = '<div class="text-center text-red-400 text-sm py-4">Failed to load rooms</div>';
+		}
+	}
+
+	// Initial load and periodic refresh
+	let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
 	document.getElementById('back-btn')?.addEventListener('click', () => {
+		if (refreshInterval) clearInterval(refreshInterval);
 		cleanup();
 		renderGameMenu(content);
 	});
+
+	document.getElementById('refresh-rooms-btn')?.addEventListener('click', loadRooms);
 
 	// Connect to WebSocket
 	statusDiv.textContent = 'Connecting...';
 	gameSocket.connect().then(() => {
 		statusDiv.textContent = 'Connected ✓';
 		statusDiv.classList.add('text-green-400');
+		loadRooms();
+		refreshInterval = setInterval(loadRooms, 5000); // Refresh every 5 seconds
 	}).catch(() => {
 		statusDiv.textContent = 'Connection failed';
 		statusDiv.classList.add('text-red-400');
+	});
+
+	// Cleanup on page change
+	cleanupFunctions.push(() => {
+		if (refreshInterval) clearInterval(refreshInterval);
 	});
 
 	// Create room
@@ -488,13 +555,16 @@ function showOnlineLobby(content: HTMLElement): void {
 	const unsubRoomCreated = gameSocket.on('room_created', (data) => {
 		playerNumber = data.player || 1;
 		currentRoomId = data.roomId || null;
+		if (refreshInterval) clearInterval(refreshInterval);
 		showWaitingRoom(content, data.roomId!);
 	});
 
 	const unsubRoomJoined = gameSocket.on('room_joined', (data) => {
 		playerNumber = data.player || 2;
 		currentRoomId = data.roomId || null;
-		showWaitingRoom(content, data.roomId!);
+		if (refreshInterval) clearInterval(refreshInterval);
+		// Player 2 goes directly to Ready screen (opponent already exists)
+		showReadyScreen(content, (data as { hostUsername?: string }).hostUsername || 'Opponent');
 	});
 
 	const unsubError = gameSocket.on('error', (data) => {
@@ -546,7 +616,14 @@ function showWaitingRoom(content: HTMLElement, roomId: string): void {
 		showReadyScreen(content, data.username);
 	});
 
-	cleanupFunctions.push(unsubOpponentJoined);
+	// Handle host disconnecting (fallback, shouldn't happen here but just in case)
+	const unsubDisconnect = gameSocket.on('opponent_disconnected', () => {
+		alert('Room closed. Returning to lobby.');
+		cleanup();
+		showOnlineLobby(content);
+	});
+
+	cleanupFunctions.push(unsubOpponentJoined, unsubDisconnect);
 }
 
 function showReadyScreen(content: HTMLElement, opponentName?: string): void {
@@ -577,11 +654,22 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
 
 	const unsubGameStart = gameSocket.on('game_start', (data) => {
 		if (data.state) {
-			startOnlineGame(content, data.state);
+			// Use tournament IDs to detect tournament mode (more reliable than currentMode)
+			if (currentTournamentId && currentTournamentMatchId) {
+				startOnlineTournamentGame(content, data.state, currentTournamentId, currentTournamentMatchId);
+			} else {
+				startOnlineGame(content, data.state);
+			}
 		}
 	});
 
-	cleanupFunctions.push(unsubGameStart);
+	const unsubDisconnect = gameSocket.on('opponent_disconnected', () => {
+		alert('Opponent disconnected. Returning to lobby.');
+		cleanup();
+		showOnlineLobby(content);
+	});
+
+	cleanupFunctions.push(unsubGameStart, unsubDisconnect);
 }
 
 function startOnlineGame(content: HTMLElement, initialState: GameState): void {
@@ -673,6 +761,9 @@ function initOnlineGame(initialState: GameState): void {
 	}
 
 	function render(): void {
+		const isP2 = playerNumber === 2;
+		const flipX = (x: number, width: number) => isP2 ? CANVAS_WIDTH - x - width : x;
+
 		// Clear
 		ctx.fillStyle = '#050508';
 		ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -687,28 +778,37 @@ function initOnlineGame(initialState: GameState): void {
 		ctx.setLineDash([]);
 
 		// Paddles
-		ctx.fillStyle = '#00ff88';
-		ctx.fillRect(0, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
-		ctx.fillStyle = '#0088ff';
-		ctx.fillRect(CANVAS_WIDTH - PADDLE_WIDTH, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
+		// Internal P1 is Green, Internal P2 is Blue
+		const p1X = flipX(0, PADDLE_WIDTH);
+		const p2X = flipX(CANVAS_WIDTH - PADDLE_WIDTH, PADDLE_WIDTH);
+
+		ctx.fillStyle = '#00ff88'; // P1 color
+		ctx.fillRect(p1X, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
+		ctx.fillStyle = '#0088ff'; // P2 color
+		ctx.fillRect(p2X, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
 
 		// Ball
+		const ballX = flipX(gameState.ball.x, BALL_SIZE);
 		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(gameState.ball.x, gameState.ball.y, BALL_SIZE, BALL_SIZE);
+		ctx.fillRect(ballX, gameState.ball.y, BALL_SIZE, BALL_SIZE);
 
 		// Score
+		const p1ScoreX = isP2 ? (CANVAS_WIDTH / 4) * 3 : CANVAS_WIDTH / 4;
+		const p2ScoreX = isP2 ? CANVAS_WIDTH / 4 : (CANVAS_WIDTH / 4) * 3;
+
 		ctx.font = '48px Orbitron, monospace';
 		ctx.fillStyle = '#00ff88';
 		ctx.textAlign = 'center';
-		ctx.fillText(gameState.score.player1.toString(), CANVAS_WIDTH / 4, 60);
+		ctx.fillText(gameState.score.player1.toString(), p1ScoreX, 60);
 		ctx.fillStyle = '#0088ff';
-		ctx.fillText((gameState.score.player2.toString()), (CANVAS_WIDTH / 4) * 3, 60);
+		ctx.fillText((gameState.score.player2.toString()), p2ScoreX, 60);
 
 		// Winner
 		if (gameState.status === 'finished' && gameState.winner) {
 			ctx.font = '32px Orbitron, monospace';
-			ctx.fillStyle = gameState.winner === playerNumber ? '#00ff88' : '#ff4444';
-			const message = gameState.winner === playerNumber ? 'You Win!' : 'You Lose!';
+			const isWinner = gameState.winner === playerNumber;
+			ctx.fillStyle = isWinner ? '#00ff88' : '#ff4444';
+			const message = isWinner ? t('game.youWin') : t('game.youLose');
 			ctx.fillText(message, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 		}
 	}
@@ -722,18 +822,68 @@ function initOnlineGame(initialState: GameState): void {
 	gameLoop();
 }
 
-// ====================== TOURNAMENT GAME ======================
+// ====================== ONLINE TOURNAMENT ======================
 
-function startTournamentGame(content: HTMLElement, tournamentId: number, matchId: number, p1: string, p2: string): void {
-	currentMode = 'local'; // Uses local game logic
+function startOnlineTournament(content: HTMLElement, tournamentId: number, matchId: number): void {
+	currentMode = 'online-tournament';
+
+	content.innerHTML = `
+		<div class="max-w-lg mx-auto px-4 py-8 text-center">
+			<h2 class="font-game text-2xl text-yellow-500 mb-8">Tournament Match</h2>
+			<div id="connection-status" class="text-center text-gray-500 text-sm mb-4">Connecting to match...</div>
+			<div id="tournament-lobby-error" class="hidden bg-red-500/10 text-red-400 px-4 py-3 rounded-lg text-sm mb-4"></div>
+			
+			<div class="card p-6">
+				<p class="text-gray-400 mb-2">Match ID:</p>
+				<p class="font-game text-2xl text-gradient">${matchId}</p>
+			</div>
+		</div>
+	`;
+
+	const statusDiv = document.getElementById('connection-status')!;
+	const errorDiv = document.getElementById('tournament-lobby-error')!;
+
+	gameSocket.connect().then(() => {
+		statusDiv.textContent = 'Connected. Joining match...';
+		// Send custom message to join tournament match
+		gameSocket.send({ type: 'join_tournament_match', roomId: matchId.toString() });
+	}).catch(() => {
+		statusDiv.textContent = 'Connection failed';
+		statusDiv.classList.add('text-red-400');
+	});
+
+	const unsubRoomCreated = gameSocket.on('room_created', (data) => {
+		playerNumber = data.player || 1;
+		currentRoomId = data.roomId || null;
+		showWaitingRoom(content, data.roomId!);
+	});
+
+	const unsubRoomJoined = gameSocket.on('room_joined', (data) => {
+		playerNumber = data.player || 2;
+		currentRoomId = data.roomId || null;
+		// Ensure tournament variables are set before showReadyScreen
+		currentTournamentId = tournamentId;
+		currentTournamentMatchId = matchId;
+		showReadyScreen(content, (data as any).hostUsername || 'Opponent');
+	});
+
+	const unsubError = gameSocket.on('error', (data) => {
+		errorDiv.textContent = data.message || 'An error occurred';
+		errorDiv.classList.remove('hidden');
+	});
+
+	cleanupFunctions.push(unsubRoomCreated, unsubRoomJoined, unsubError);
+}
+
+function startOnlineTournamentGame(content: HTMLElement, initialState: GameState, tournamentId: number, matchId: number): void {
+	currentMode = 'online-tournament';
+	renderNavbar();
 
 	content.innerHTML = `
     <div class="max-w-4xl mx-auto px-4 py-8">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-game text-xl text-yellow-500">Tournament Match</h2>
-        <div class="text-sm text-gray-400">
-           <span class="text-pong-primary">${p1}</span> vs <span class="text-pong-secondary">${p2}</span>
-        </div>
+        <span class="badge badge-online">Match ID: ${matchId}</span>
       </div>
       
       <div class="card p-2 relative">
@@ -744,48 +894,41 @@ function startTournamentGame(content: HTMLElement, tournamentId: number, matchId
         </div>
       </div>
       
+      <div class="flex justify-between items-center mt-6">
+          <div class="font-game text-xl"><span class="${playerNumber === 1 ? 'text-green-400' : 'text-blue-400'}">YOU</span>: Player ${playerNumber} (${playerNumber === 1 ? 'Green' : 'Blue'})</div>
+          <div class="text-gray-500">First to ${WINNING_SCORE} wins</div>
+          <div class="text-pong-secondary font-game text-xl">OPPONENT</div>
+      </div>
+      
       <p class="text-center text-gray-500 text-sm mt-4">
-        ${p1}: W/S • ${p2}: ↑/↓ • Press SPACE to start
+        Use ↑/↓ or W/S to move your paddle
       </p>
     </div>
   `;
 
-	initTournamentGame(tournamentId, matchId, p1, p2);
-}
-
-function initTournamentGame(tournamentId: number, matchId: number, p1Name: string, p2Name: string): void {
 	const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 	if (!canvas) return;
 	const ctx = canvas.getContext('2d')!;
 	const savingOverlay = document.getElementById('saving-overlay');
 
-	// Game state (copied from local game)
-	let paddle1Y = CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2;
-	let paddle2Y = CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2;
-	let ballX = CANVAS_WIDTH / 2;
-	let ballY = CANVAS_HEIGHT / 2;
-	let ballVX = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
-	let ballVY = (Math.random() - 0.5) * BALL_SPEED;
-	let score1 = 0;
-	let score2 = 0;
-	let gameRunning = false;
-	let winner: 1 | 2 | null = null;
-	let isSaving = false;
-
-	// Key states
+	let gameState: GameState = initialState;
+	let myPaddleY = playerNumber === 1 ? gameState.paddles.player1 : gameState.paddles.player2;
+	let resultSaved = false;
 	const keys: Record<string, boolean> = {};
 
 	const keyDownHandler = (e: KeyboardEvent) => {
-		if (isSaving) return;
-		keys[e.key] = true;
-		if (e.key === ' ' && !gameRunning && !winner) {
-			gameRunning = true;
+		keys[e.key.toLowerCase()] = true;
+		if (gameState.status === 'finished' && (e.key === ' ' || e.key === 'Enter')) {
+			navigateToTournament();
 		}
 	};
+	const keyUpHandler = (e: KeyboardEvent) => keys[e.key.toLowerCase()] = false;
 
-	const keyUpHandler = (e: KeyboardEvent) => {
-		keys[e.key] = false;
-	};
+	canvas.addEventListener('click', () => {
+		if (gameState.status === 'finished') {
+			navigateToTournament();
+		}
+	});
 
 	window.addEventListener('keydown', keyDownHandler);
 	window.addEventListener('keyup', keyUpHandler);
@@ -794,99 +937,89 @@ function initTournamentGame(tournamentId: number, matchId: number, p1Name: strin
 		window.removeEventListener('keyup', keyUpHandler);
 	});
 
-	function resetBall(): void {
-		ballX = CANVAS_WIDTH / 2;
-		ballY = CANVAS_HEIGHT / 2;
-		ballVX = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
-		ballVY = (Math.random() - 0.5) * BALL_SPEED;
-		gameRunning = false;
+	function navigateToTournament() {
+		cleanup();
+		router.navigate(`/tournament/${tournamentId}`);
 	}
 
-	async function handleWin(winningPlayer: 1 | 2) {
-		winner = winningPlayer;
-		gameRunning = false;
-		isSaving = true;
+	const unsubState = gameSocket.on('game_state', (data) => {
+		if (data.state) gameState = data.state;
+	});
 
-		// Show saving overlay after a short delay to see the winner
-		setTimeout(async () => {
-			if (savingOverlay) savingOverlay.classList.remove('hidden');
+	const unsubGameOver = gameSocket.on('game_over', async (data) => {
+		gameState.status = 'finished';
+		gameState.winner = data.winner;
+		if (data.state) gameState.score = data.state.score;
 
-			try {
-				const result = await api.post(`/tournaments/${tournamentId}/match/${matchId}/result`, {
-					player1Score: score1,
-					player2Score: score2
-				});
+		const isWinner = gameState.winner === playerNumber;
+		const resultText = isWinner ? t('game.youWin') : t('game.youLose');
+		const resultColor = isWinner ? 'text-green-400' : 'text-red-400';
 
-				if (result.success) {
-					// Navigate back to tournament
-					cleanup();
-					router.navigate(`/tournament/${tournamentId}`);
-				} else {
-					alert('Failed to save result: ' + (result.error || 'Unknown error'));
-					if (savingOverlay) savingOverlay.classList.add('hidden');
-					isSaving = false;
-				}
-			} catch (err) {
-				alert('Failed to save result');
-				if (savingOverlay) savingOverlay.classList.add('hidden');
-				isSaving = false;
+		// Show overlay with result
+		if (savingOverlay) {
+			const spinner = savingOverlay.querySelector('.loading-spinner');
+			const text = savingOverlay.querySelector('p');
+			if (spinner) spinner.classList.add('hidden');
+			if (text) text.innerHTML = `
+				<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
+				<div class="text-gray-400">${t('game.savingResult')}</div>
+			`;
+			savingOverlay.classList.remove('hidden');
+		}
+
+		try {
+			const score1 = data.state?.score?.player1 ?? gameState.score.player1;
+			const score2 = data.state?.score?.player2 ?? gameState.score.player2;
+
+			const result = await api.post(`/tournaments/${tournamentId}/match/${matchId}/result`, {
+				player1Score: score1,
+				player2Score: score2
+			});
+
+			// Show return instructions regardless of save result (other player may have saved already)
+			if (savingOverlay) {
+				const text = savingOverlay.querySelector('p');
+				if (text) text.innerHTML = `
+					<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
+					<div class="text-gray-400">${t('game.pressSpace')}</div>
+				`;
 			}
-		}, 2000);
-	}
+			resultSaved = true;
+		} catch (err) {
+			console.error('Error saving result:', err);
+			// Still show return instructions
+			if (savingOverlay) {
+				const text = savingOverlay.querySelector('p');
+				if (text) text.innerHTML = `
+					<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
+					<div class="text-gray-400">${t('game.pressSpace')}</div>
+				`;
+			}
+		}
+	});
+
+	cleanupFunctions.push(unsubState, unsubGameOver);
 
 	function update(): void {
-		if (!gameRunning || winner) return;
+		if (gameState.status !== 'playing') return;
 
-		// Move paddles
-		if (keys['w'] || keys['W']) paddle1Y = Math.max(0, paddle1Y - PADDLE_SPEED);
-		if (keys['s'] || keys['S']) paddle1Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle1Y + PADDLE_SPEED);
-		if (keys['ArrowUp']) paddle2Y = Math.max(0, paddle2Y - PADDLE_SPEED);
-		if (keys['ArrowDown']) paddle2Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle2Y + PADDLE_SPEED);
-
-		// Move ball
-		ballX += ballVX;
-		ballY += ballVY;
-
-		// Top/bottom collision
-		if (ballY <= 0 || ballY >= CANVAS_HEIGHT - BALL_SIZE) {
-			ballVY *= -1;
+		let moved = false;
+		if (keys['w'] || keys['arrowup']) {
+			myPaddleY = Math.max(0, myPaddleY - PADDLE_SPEED);
+			moved = true;
+		}
+		if (keys['s'] || keys['arrowdown']) {
+			myPaddleY = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, myPaddleY + PADDLE_SPEED);
+			moved = true;
 		}
 
-		// Paddle 1 collision
-		if (ballX <= PADDLE_WIDTH + BALL_SIZE && ballY + BALL_SIZE >= paddle1Y && ballY <= paddle1Y + PADDLE_HEIGHT) {
-			ballVX = Math.abs(ballVX);
-			const hitPos = (ballY - paddle1Y) / PADDLE_HEIGHT - 0.5;
-			ballVY += hitPos * 3;
-			// Increase speed slightly
-			ballVX *= 1.05;
-			ballVY *= 1.05;
-		}
-
-		// Paddle 2 collision
-		if (ballX >= CANVAS_WIDTH - PADDLE_WIDTH - BALL_SIZE && ballY + BALL_SIZE >= paddle2Y && ballY <= paddle2Y + PADDLE_HEIGHT) {
-			ballVX = -Math.abs(ballVX);
-			const hitPos = (ballY - paddle2Y) / PADDLE_HEIGHT - 0.5;
-			ballVY += hitPos * 3;
-			// Increase speed slightly
-			ballVX *= 1.05;
-			ballVY *= 1.05;
-		}
-
-		// Scoring
-		if (ballX < 0) {
-			score2++;
-			if (score2 >= WINNING_SCORE) handleWin(2);
-			else resetBall();
-		}
-		if (ballX > CANVAS_WIDTH) {
-			score1++;
-			if (score1 >= WINNING_SCORE) handleWin(1);
-			else resetBall();
-		}
+		if (moved) gameSocket.movePaddle(myPaddleY);
 	}
 
 	function render(): void {
-		// Clear
+		const isP2 = playerNumber === 2;
+		const flipX = (x: number, width: number) => isP2 ? CANVAS_WIDTH - x - width : x;
+
 		ctx.fillStyle = '#050508';
 		ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -900,41 +1033,35 @@ function initTournamentGame(tournamentId: number, matchId: number, p1Name: strin
 		ctx.setLineDash([]);
 
 		// Paddles
+		const p1X = flipX(0, PADDLE_WIDTH);
+		const p2X = flipX(CANVAS_WIDTH - PADDLE_WIDTH, PADDLE_WIDTH);
+
 		ctx.fillStyle = '#00ff88';
-		ctx.fillRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+		ctx.fillRect(p1X, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
 		ctx.fillStyle = '#0088ff';
-		ctx.fillRect(CANVAS_WIDTH - PADDLE_WIDTH, paddle2Y, PADDLE_WIDTH, PADDLE_HEIGHT);
+		ctx.fillRect(p2X, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
 
 		// Ball
+		const ballX = flipX(gameState.ball.x, BALL_SIZE);
 		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(ballX, ballY, BALL_SIZE, BALL_SIZE);
+		ctx.fillRect(ballX, gameState.ball.y, BALL_SIZE, BALL_SIZE);
 
 		// Score
+		const p1ScoreX = isP2 ? (CANVAS_WIDTH / 4) * 3 : CANVAS_WIDTH / 4;
+		const p2ScoreX = isP2 ? CANVAS_WIDTH / 4 : (CANVAS_WIDTH / 4) * 3;
+
 		ctx.font = '48px Orbitron, monospace';
 		ctx.fillStyle = '#00ff88';
 		ctx.textAlign = 'center';
-		ctx.fillText(score1.toString(), CANVAS_WIDTH / 4, 60);
+		ctx.fillText(gameState.score.player1.toString(), p1ScoreX, 60);
 		ctx.fillStyle = '#0088ff';
-		ctx.fillText(score2.toString(), (CANVAS_WIDTH / 4) * 3, 60);
+		ctx.fillText(gameState.score.player2.toString(), p2ScoreX, 60);
 
-		// Names
-		ctx.font = '14px Inter, sans-serif';
-		ctx.fillStyle = '#00ff88';
-		ctx.fillText(p1Name, CANVAS_WIDTH / 4, 30);
-		ctx.fillStyle = '#0088ff';
-		ctx.fillText(p2Name, (CANVAS_WIDTH / 4) * 3, 30);
-
-
-		// Instructions or winner
-		ctx.font = '16px Inter, sans-serif';
-		ctx.fillStyle = '#666';
-		if (winner) {
+		if (gameState.status === 'finished' && gameState.winner) {
 			ctx.font = '32px Orbitron, monospace';
-			ctx.fillStyle = winner === 1 ? '#00ff88' : '#0088ff';
-			const winnerName = winner === 1 ? p1Name : p2Name;
-			ctx.fillText(`${winnerName} Wins!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-		} else if (!gameRunning) {
-			ctx.fillText('Press SPACE to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+			const isWinner = gameState.winner === playerNumber;
+			ctx.fillStyle = isWinner ? '#00ff88' : '#ff4444';
+			ctx.fillText(isWinner ? t('game.youWin') : t('game.youLose'), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 		}
 	}
 

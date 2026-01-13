@@ -90,10 +90,10 @@ export function renderHomePage(): void {
     <section class="py-20 px-4">
       <div class="max-w-4xl mx-auto">
         <a href="/game" data-link class="block group cursor-pointer">
-          <div class="game-container aspect-video flex items-center justify-center group-hover:border-pong-primary/50 transition-colors duration-300">
-            <div class="text-center group-hover:scale-105 transition-transform duration-300">
-              <div class="font-game text-6xl text-pong-primary/30 group-hover:text-pong-primary/80 mb-4 transition-colors">PONG</div>
-              <p class="text-gray-500 group-hover:text-white transition-colors">${t('home.playNow')}</p>
+          <div class="pong-table aspect-video flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.02] rounded-lg">
+            <div class="text-center relative z-10 p-8 bg-black/20 backdrop-blur-sm rounded-xl border border-white/20">
+              <div class="font-game text-6xl text-white mb-4 drop-shadow-md">PONG</div>
+              <p class="text-white/80 text-xl font-medium tracking-wide">${t('home.playNow')}</p>
             </div>
           </div>
         </a>

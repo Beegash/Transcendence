@@ -2,6 +2,7 @@
  * ft_transcendence - Main Application Entry Point
  */
 
+import { initBackground } from './components/background';
 import './styles/main.css';
 import { router } from './utils/router';
 import { i18n } from './i18n';
@@ -69,6 +70,7 @@ function init(): void {
 
 	// Initial render
 	renderNavbar();
+	initBackground();
 	router.init();
 
 	console.log('✅ ft_transcendence ready!');
