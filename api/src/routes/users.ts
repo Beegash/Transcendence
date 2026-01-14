@@ -213,4 +213,247 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			return reply.send({ friends });
 		}
 	);
+
+	/**
+	 * GET /:id/friends/requests
+	 * Get pending friend requests (received)
+	 */
+	fastify.get<{ Params: { id: string } }>(
+		'/:id/friends/requests',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+			const userId = parseInt(request.params.id, 10);
+
+			if (isNaN(userId) || request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'Unauthorized' });
+			}
+
+			const requests = db
+				.prepare(
+					`SELECT f.id, f.user_id as senderId, f.created_at,
+					 u.username, u.display_name, u.avatar_url, u.is_online
+					 FROM friendships f
+					 JOIN users u ON f.user_id = u.id
+					 WHERE f.friend_id = ? AND f.status = 'pending'
+					 ORDER BY f.created_at DESC`
+				)
+				.all(userId);
+
+			return reply.send({ requests });
+		}
+	);
+
+	/**
+	 * POST /:id/friends
+	 * Send friend request
+	 */
+	fastify.post<{ Params: { id: string }; Body: { friendId: number } }>(
+		'/:id/friends',
+		{ preHandler: authMiddleware },
+		async (
+			request: FastifyRequest<{ Params: { id: string }; Body: { friendId: number } }>,
+			reply: FastifyReply
+		) => {
+			const userId = parseInt(request.params.id, 10);
+			const { friendId } = request.body;
+
+			if (isNaN(userId) || request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'Unauthorized' });
+			}
+
+			if (userId === friendId) {
+				return reply.status(400).send({ error: 'Cannot add yourself as friend' });
+			}
+
+			// Check if friend exists
+			const friend = db.prepare('SELECT id FROM users WHERE id = ? AND is_anonymized = FALSE').get(friendId);
+			if (!friend) {
+				return reply.status(404).send({ error: 'User not found' });
+			}
+
+			// Check existing friendship
+			const existing = db
+				.prepare('SELECT id, status FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)')
+				.get(userId, friendId, friendId, userId) as { id: number; status: string } | undefined;
+
+			if (existing) {
+				if (existing.status === 'accepted') {
+					return reply.status(400).send({ error: 'Already friends' });
+				}
+				if (existing.status === 'pending') {
+					return reply.status(400).send({ error: 'Friend request already pending' });
+				}
+				if (existing.status === 'blocked') {
+					return reply.status(400).send({ error: 'Cannot send request' });
+				}
+			}
+
+			try {
+				db.prepare('INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, ?)').run(userId, friendId, 'pending');
+				return reply.status(201).send({ message: 'Friend request sent' });
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({ error: 'Failed to send friend request' });
+			}
+		}
+	);
+
+	/**
+	 * PUT /:id/friends/:friendId
+	 * Accept or reject friend request
+	 */
+	fastify.put<{ Params: { id: string; friendId: string }; Body: { action: 'accept' | 'reject' } }>(
+		'/:id/friends/:friendId',
+		{ preHandler: authMiddleware },
+		async (
+			request: FastifyRequest<{ Params: { id: string; friendId: string }; Body: { action: 'accept' | 'reject' } }>,
+			reply: FastifyReply
+		) => {
+			const userId = parseInt(request.params.id, 10);
+			const friendId = parseInt(request.params.friendId, 10);
+			const { action } = request.body;
+
+			if (isNaN(userId) || request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'Unauthorized' });
+			}
+
+			if (!['accept', 'reject'].includes(action)) {
+				return reply.status(400).send({ error: 'Invalid action. Use accept or reject' });
+			}
+
+			// Find the pending request (where current user is the recipient)
+			const friendship = db
+				.prepare('SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = ?')
+				.get(friendId, userId, 'pending') as { id: number } | undefined;
+
+			if (!friendship) {
+				return reply.status(404).send({ error: 'Friend request not found' });
+			}
+
+			try {
+				if (action === 'accept') {
+					db.prepare('UPDATE friendships SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('accepted', friendship.id);
+					return reply.send({ message: 'Friend request accepted' });
+				} else {
+					db.prepare('DELETE FROM friendships WHERE id = ?').run(friendship.id);
+					return reply.send({ message: 'Friend request rejected' });
+				}
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({ error: 'Failed to process request' });
+			}
+		}
+	);
+
+	/**
+	 * DELETE /:id/friends/:friendId
+	 * Remove friend
+	 */
+	fastify.delete<{ Params: { id: string; friendId: string } }>(
+		'/:id/friends/:friendId',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { id: string; friendId: string } }>, reply: FastifyReply) => {
+			const userId = parseInt(request.params.id, 10);
+			const friendId = parseInt(request.params.friendId, 10);
+
+			if (isNaN(userId) || request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'Unauthorized' });
+			}
+
+			try {
+				const result = db
+					.prepare('DELETE FROM friendships WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)) AND status = ?')
+					.run(userId, friendId, friendId, userId, 'accepted');
+
+				if (result.changes === 0) {
+					return reply.status(404).send({ error: 'Friendship not found' });
+				}
+
+				return reply.send({ message: 'Friend removed' });
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({ error: 'Failed to remove friend' });
+			}
+		}
+	);
+
+	/**
+	 * POST /:id/avatar
+	 * Upload avatar image
+	 */
+	fastify.post<{ Params: { id: string } }>(
+		'/:id/avatar',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+			const userId = parseInt(request.params.id, 10);
+
+			if (isNaN(userId) || request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'Unauthorized' });
+			}
+
+			try {
+				const data = await request.file();
+				if (!data) {
+					return reply.status(400).send({ error: 'No file uploaded' });
+				}
+
+				// Validate file type
+				const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+				if (!allowedTypes.includes(data.mimetype)) {
+					return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
+				}
+
+				// Read file buffer
+				const buffer = await data.toBuffer();
+
+				// Generate filename
+				const ext = data.mimetype.split('/')[1];
+				const filename = `avatar_${userId}_${Date.now()}.${ext}`;
+
+				// Save to uploads directory
+				const fs = await import('fs/promises');
+				const path = await import('path');
+				const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+
+				// Create directory if not exists
+				await fs.mkdir(uploadsDir, { recursive: true });
+
+				const filePath = path.join(uploadsDir, filename);
+				await fs.writeFile(filePath, buffer);
+
+				// Update database with new avatar URL
+				const avatarUrl = `/uploads/avatars/${filename}`;
+				db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(avatarUrl, userId);
+
+				return reply.send({ message: 'Avatar uploaded successfully', avatarUrl });
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({ error: 'Failed to upload avatar' });
+			}
+		}
+	);
+
+	/**
+	 * DELETE /:id/avatar
+	 * Reset avatar to default
+	 */
+	fastify.delete<{ Params: { id: string } }>(
+		'/:id/avatar',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+			const userId = parseInt(request.params.id, 10);
+
+			if (isNaN(userId) || request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'Unauthorized' });
+			}
+
+			try {
+				db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('/default-avatar.png', userId);
+				return reply.send({ message: 'Avatar reset to default' });
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({ error: 'Failed to reset avatar' });
+			}
+		}
+	);
 }

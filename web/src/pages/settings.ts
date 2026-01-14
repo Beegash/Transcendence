@@ -42,15 +42,15 @@ export function renderSettingsPage(): void {
         <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.notifications')}</h2>
         <div class="space-y-4">
           <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-gray-300">Game invitations</span>
+            <span class="text-gray-300">${t('settings.gameInvitations')}</span>
             <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
           </label>
           <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-gray-300">Tournament updates</span>
+            <span class="text-gray-300">${t('settings.tournamentUpdates')}</span>
             <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
           </label>
           <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-gray-300">Friend requests</span>
+            <span class="text-gray-300">${t('settings.friendRequests')}</span>
             <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
           </label>
         </div>
@@ -77,9 +77,9 @@ export function renderSettingsPage(): void {
       
       <!-- Danger Zone -->
       <div class="card border-red-500/30">
-        <h2 class="font-game text-lg text-red-400 mb-4">Danger Zone</h2>
+        <h2 class="font-game text-lg text-red-400 mb-4">${t('settings.dangerZone')}</h2>
         <p class="text-gray-500 text-sm mb-4">
-          Once you delete your account, there is no going back. Please be certain.
+          ${t('settings.dangerZoneWarning')}
         </p>
         <button id="delete-account-btn" class="btn btn-danger w-full">
           ${t('settings.deleteAccount')}

@@ -64,8 +64,11 @@ export function renderNavbar(): void {
                 </a>
                 <div class="relative group">
                   <button class="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                    <div class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center border-2 border-pong-primary">
-                      <span class="text-pong-primary font-semibold text-sm">${user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+                    <div class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center border-2 border-pong-primary overflow-hidden">
+                      ${user?.avatarUrl && user.avatarUrl !== '/default-avatar.png'
+        ? `<img src="${user.avatarUrl}" alt="${user.displayName}" class="w-full h-full object-cover" />`
+        : `<span class="text-pong-primary font-semibold text-sm">${user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>`
+      }
                     </div>
                     <span class="hidden sm:block text-sm text-gray-300">${user?.displayName || user?.username || 'User'}</span>
                   </button>

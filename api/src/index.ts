@@ -4,6 +4,7 @@ import "./db/index.js";
 // Import plugins
 import fastifyCookie from "@fastify/cookie";
 import fastifyWebsocket from "@fastify/websocket";
+import fastifyMultipart from "@fastify/multipart";
 
 // Import routes
 import authRoutes from "./routes/auth.js";
@@ -29,6 +30,12 @@ await app.register(import("@fastify/rate-limit"), {
 await app.register(fastifyCookie, {
   secret: process.env.JWT_SECRET || 'cookie-secret',
 });
+await app.register(fastifyMultipart, {
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+    files: 1,
+  },
+});
 await app.register(fastifyWebsocket);
 
 // Routes
@@ -37,6 +44,16 @@ await app.register(userRoutes, { prefix: '/users' });
 await app.register(gameRoutes, { prefix: '/game' });
 await app.register(tournamentRoutes, { prefix: '/tournaments' });
 await app.register(statsRoutes, { prefix: '/stats' });
+
+// Serve static uploads - only for /uploads/ path
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+await app.register(import('@fastify/static'), {
+  root: path.join(process.cwd(), 'uploads'),
+  prefix: '/uploads/',
+  decorateReply: false,
+});
 
 // Health check endpoint
 app.get("/", async () => {

@@ -99,7 +99,7 @@ function renderGameMenu(content: HTMLElement): void {
               ${t('game.localPlayDesc')}
             </p>
             <div class="mt-4 text-gray-500 text-xs">
-              Player 1: W/S • Player 2: ↑/↓
+              ${t('game.controls')}
             </div>
           </div>
         </div>
@@ -112,12 +112,12 @@ function renderGameMenu(content: HTMLElement): void {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
               </svg>
             </div>
-            <h2 class="font-game text-xl text-yellow-500 mb-2">vs AI</h2>
+            <h2 class="font-game text-xl text-yellow-500 mb-2">${t('game.aiPlay')}</h2>
             <p class="text-gray-400 text-sm">
-              Play against an AI opponent
+              ${t('game.aiPlayDesc')}
             </p>
             <div class="mt-4 text-gray-500 text-xs">
-              AI refreshes view every 1 second
+              ${t('game.aiRefreshInfo')}
             </div>
           </div>
         </div>
@@ -135,7 +135,7 @@ function renderGameMenu(content: HTMLElement): void {
               ${t('game.onlinePlayDesc')}
             </p>
             <div class="mt-4 text-gray-500 text-xs">
-              Real-time multiplayer
+              ${t('game.realTimeMultiplayer')}
             </div>
           </div>
         </div>
@@ -200,16 +200,16 @@ function showAIReadyScreen(content: HTMLElement): void {
       <h2 class="font-game text-2xl text-yellow-500 mb-8">AI Ready!</h2>
       
       <div class="card mb-6">
-        <p class="text-gray-400 mb-2">You are playing against:</p>
+        <p class="text-white/80 mb-2">You are playing against:</p>
         <p class="font-game text-2xl text-yellow-500">AI Opponent</p>
-        <p class="text-gray-500 text-sm mt-2">AI updates its view every 1 second</p>
+        <p class="text-white/60 text-sm mt-2">AI updates its view every 1 second</p>
       </div>
       
-      <p class="text-gray-500 mb-6">Click Ready to start the game!</p>
+      <p class="text-white/70 mb-6">Click Ready to start the game!</p>
       
       <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready!</button>
       
-      <p class="text-gray-600 text-sm mt-6">You are Player 1 (Left - Green)</p>
+      <p class="text-white/50 text-sm mt-6">You are Player 1 (Left - Red)</p>
     </div>
   `;
 
@@ -360,35 +360,38 @@ function initLocalGame(): void {
 	}
 
 	function render(): void {
-		// Clear
-		ctx.fillStyle = '#050508';
+		// Clear - Pong Table Green
+		ctx.fillStyle = '#326255';
 		ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-		// Center line
+		// Center line (net)
 		ctx.setLineDash([10, 10]);
-		ctx.strokeStyle = '#1a1a2e';
+		ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+		ctx.lineWidth = 2;
 		ctx.beginPath();
 		ctx.moveTo(CANVAS_WIDTH / 2, 0);
 		ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// Paddles
-		ctx.fillStyle = '#00ff88';
+		// Paddles - Red (P1) and Navy (P2)
+		ctx.fillStyle = '#C0392B';
 		ctx.fillRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT);
-		ctx.fillStyle = '#0088ff';
+		ctx.fillStyle = '#3498DB';
 		ctx.fillRect(CANVAS_WIDTH - PADDLE_WIDTH, paddle2Y, PADDLE_WIDTH, PADDLE_HEIGHT);
 
-		// Ball
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(ballX, ballY, BALL_SIZE, BALL_SIZE);
+		// Ball - Orange Circle
+		ctx.fillStyle = '#EA871E';
+		ctx.beginPath();
+		ctx.arc(ballX + BALL_SIZE / 2, ballY + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
+		ctx.fill();
 
 		// Score
 		ctx.font = '48px Orbitron, monospace';
-		ctx.fillStyle = '#00ff88';
+		ctx.fillStyle = '#C0392B';
 		ctx.textAlign = 'center';
 		ctx.fillText(score1.toString(), CANVAS_WIDTH / 4, 60);
-		ctx.fillStyle = '#0088ff';
+		ctx.fillStyle = '#3498DB';
 		ctx.fillText(score2.toString(), (CANVAS_WIDTH / 4) * 3, 60);
 
 		// Instructions or winner
@@ -396,10 +399,10 @@ function initLocalGame(): void {
 		ctx.fillStyle = '#666';
 		if (winner) {
 			ctx.font = '32px Orbitron, monospace';
-			ctx.fillStyle = winner === 1 ? '#00ff88' : '#0088ff';
+			ctx.fillStyle = winner === 1 ? '#C0392B' : '#3498DB';
 			ctx.fillText(`Player ${winner} Wins!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 			ctx.font = '16px Inter, sans-serif';
-			ctx.fillStyle = '#666';
+			ctx.fillStyle = 'rgba(255,255,255,0.7)';
 			ctx.fillText('Press SPACE to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
 		} else if (!gameRunning) {
 			ctx.fillText('Press SPACE to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
@@ -636,11 +639,11 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
         <p class="font-game text-2xl text-pong-secondary">${opponentName || 'Anonymous'}</p>
       </div>
       
-      <p class="text-gray-500 mb-6">Click Ready when you're prepared to play.</p>
+      <p class="text-white/70 mb-6">Click Ready when you're prepared to play.</p>
       
       <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready!</button>
       
-      <p class="text-gray-600 text-sm mt-6">You are Player ${playerNumber} (${playerNumber === 1 ? 'Left' : 'Right'})</p>
+      <p class="text-white/50 text-sm mt-6">You are Player ${playerNumber} (${playerNumber === 1 ? 'Left - Red' : 'Right - Navy'})</p>
     </div>
   `;
 
@@ -679,16 +682,16 @@ function startOnlineGame(content: HTMLElement, initialState: GameState): void {
     <div class="max-w-4xl mx-auto px-4 py-8">
       <div class="flex items-center justify-between mb-4">
         <span class="badge ${playerNumber === 1 ? 'badge-online' : 'badge-offline'}">
-          You: Player ${playerNumber} (${playerNumber === 1 ? 'Left - Green' : 'Right - Blue'})
+          You: Player ${playerNumber} (${playerNumber === 1 ? 'Left - Red' : 'Right - Navy'})
         </span>
-        <span class="text-gray-500 text-sm">Room: ${currentRoomId}</span>
+        <span class="text-white/60 text-sm">Room: ${currentRoomId}</span>
       </div>
       
       <div class="card p-2">
         <canvas id="game-canvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" class="w-full bg-pong-darker rounded-lg"></canvas>
       </div>
       
-      <p class="text-center text-gray-500 text-sm mt-4">
+      <p class="text-center text-white/60 text-sm mt-4">
         Use ↑/↓ or W/S to move your paddle
       </p>
     </div>
@@ -764,13 +767,14 @@ function initOnlineGame(initialState: GameState): void {
 		const isP2 = playerNumber === 2;
 		const flipX = (x: number, width: number) => isP2 ? CANVAS_WIDTH - x - width : x;
 
-		// Clear
-		ctx.fillStyle = '#050508';
+		// Clear - Pong Table Green
+		ctx.fillStyle = '#326255';
 		ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-		// Center line
+		// Center line (net)
 		ctx.setLineDash([10, 10]);
-		ctx.strokeStyle = '#1a1a2e';
+		ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+		ctx.lineWidth = 2;
 		ctx.beginPath();
 		ctx.moveTo(CANVAS_WIDTH / 2, 0);
 		ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
@@ -782,32 +786,34 @@ function initOnlineGame(initialState: GameState): void {
 		const p1X = flipX(0, PADDLE_WIDTH);
 		const p2X = flipX(CANVAS_WIDTH - PADDLE_WIDTH, PADDLE_WIDTH);
 
-		ctx.fillStyle = '#00ff88'; // P1 color
+		ctx.fillStyle = '#C0392B'; // P1 color - Red
 		ctx.fillRect(p1X, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
-		ctx.fillStyle = '#0088ff'; // P2 color
+		ctx.fillStyle = '#3498DB'; // P2 color - Navy
 		ctx.fillRect(p2X, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
 
-		// Ball
+		// Ball - Orange Circle
 		const ballX = flipX(gameState.ball.x, BALL_SIZE);
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(ballX, gameState.ball.y, BALL_SIZE, BALL_SIZE);
+		ctx.fillStyle = '#EA871E';
+		ctx.beginPath();
+		ctx.arc(ballX + BALL_SIZE / 2, gameState.ball.y + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
+		ctx.fill();
 
 		// Score
 		const p1ScoreX = isP2 ? (CANVAS_WIDTH / 4) * 3 : CANVAS_WIDTH / 4;
 		const p2ScoreX = isP2 ? CANVAS_WIDTH / 4 : (CANVAS_WIDTH / 4) * 3;
 
 		ctx.font = '48px Orbitron, monospace';
-		ctx.fillStyle = '#00ff88';
+		ctx.fillStyle = '#C0392B';
 		ctx.textAlign = 'center';
 		ctx.fillText(gameState.score.player1.toString(), p1ScoreX, 60);
-		ctx.fillStyle = '#0088ff';
+		ctx.fillStyle = '#3498DB';
 		ctx.fillText((gameState.score.player2.toString()), p2ScoreX, 60);
 
 		// Winner
 		if (gameState.status === 'finished' && gameState.winner) {
 			ctx.font = '32px Orbitron, monospace';
 			const isWinner = gameState.winner === playerNumber;
-			ctx.fillStyle = isWinner ? '#00ff88' : '#ff4444';
+			ctx.fillStyle = isWinner ? '#C0392B' : '#3498DB';
 			const message = isWinner ? t('game.youWin') : t('game.youLose');
 			ctx.fillText(message, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 		}

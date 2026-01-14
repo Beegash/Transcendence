@@ -4,6 +4,7 @@
  */
 
 import db from '../db/index.js';
+import { updateStatsAfterMatch } from './stats.js';
 
 export interface Tournament {
 	id: number;
@@ -326,6 +327,11 @@ export function recordMatchResult(
 	if (match.tournament_id) {
 		advanceWinner(match.tournament_id, match.tournament_round!, match.tournament_match_number!, winnerId, winnerAlias);
 	}
+
+	// Update user stats
+	const winnerScore = player1Score > player2Score ? player1Score : player2Score;
+	const loserScore = player1Score > player2Score ? player2Score : player1Score;
+	updateStatsAfterMatch(winnerId, loserId, winnerScore, loserScore);
 
 	return true;
 }

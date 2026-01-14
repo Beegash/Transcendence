@@ -272,3 +272,43 @@ export function recordMatch(
 
 	return result.lastInsertRowid as number;
 }
+
+/**
+ * Sync all user stats from completed matches
+ * This recalculates all stats from the matches table
+ */
+export function syncAllStats(): { synced: number } {
+	// First, reset all user stats
+	db.prepare(`
+		UPDATE user_stats SET 
+			total_games = 0, wins = 0, losses = 0, 
+			win_streak = 0, total_points_scored = 0, total_points_conceded = 0,
+			updated_at = CURRENT_TIMESTAMP
+	`).run();
+
+	// Get all completed matches
+	const matches = db.prepare(`
+		SELECT player1_id, player2_id, player1_score, player2_score, winner_id 
+		FROM matches 
+		WHERE status = 'completed' AND (player1_id IS NOT NULL OR player2_id IS NOT NULL)
+	`).all() as Array<{
+		player1_id: number | null;
+		player2_id: number | null;
+		player1_score: number;
+		player2_score: number;
+		winner_id: number | null;
+	}>;
+
+	let synced = 0;
+	for (const match of matches) {
+		const winnerId = match.winner_id;
+		const loserId = winnerId === match.player1_id ? match.player2_id : match.player1_id;
+		const winnerScore = Math.max(match.player1_score, match.player2_score);
+		const loserScore = Math.min(match.player1_score, match.player2_score);
+
+		updateStatsAfterMatch(winnerId, loserId, winnerScore, loserScore);
+		synced++;
+	}
+
+	return { synced };
+}

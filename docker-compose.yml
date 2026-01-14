@@ -5,6 +5,7 @@ services:
     container_name: ft_transcendence_api
     volumes:
       - sqlite-data:/data
+      - uploads-data:/app/uploads
     environment:
       - NODE_ENV=development
       - PORT=8080
@@ -41,6 +42,8 @@ services:
 
 volumes:
   sqlite-data:
+    driver: local
+  uploads-data:
     driver: local
 
 networks:

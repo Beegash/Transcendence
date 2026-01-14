@@ -54,8 +54,8 @@ export async function renderProfilePage(): Promise<void> {
       <div class="flex items-center justify-center min-h-[60vh]">
         <div class="text-center">
           <div class="text-4xl mb-4">😕</div>
-          <h2 class="text-xl text-gray-400">User not found</h2>
-          <a href="/" data-link class="btn btn-primary mt-4">Go Home</a>
+          <h2 class="text-xl text-white/70">${t('profile.userNotFound')}</h2>
+          <a href="/" data-link class="btn btn-primary mt-4">${t('profile.goHome')}</a>
         </div>
       </div>
     `;
@@ -72,25 +72,30 @@ export async function renderProfilePage(): Promise<void> {
         <div class="flex flex-col md:flex-row items-center gap-6">
           <!-- Avatar -->
           <div class="relative">
-            <div class="w-32 h-32 rounded-full bg-pong-primary/20 flex items-center justify-center border-4 border-pong-primary">
-              <span class="font-game text-4xl text-pong-primary">${user.displayName?.charAt(0).toUpperCase() || 'U'}</span>
+            <div class="w-32 h-32 rounded-full bg-pong-primary/20 flex items-center justify-center border-4 border-pong-primary overflow-hidden">
+              ${user.avatarUrl && user.avatarUrl !== '/default-avatar.png'
+      ? `<img src="${user.avatarUrl}" alt="${user.displayName}" class="w-full h-full object-cover" />`
+      : `<span class="font-game text-4xl text-pong-primary">${user.displayName?.charAt(0).toUpperCase() || 'U'}</span>`
+    }
             </div>
             ${isOwnProfile ? `
-              <button class="absolute bottom-0 right-0 bg-pong-light p-2 rounded-full hover:bg-pong-primary transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+              <button id="avatar-upload-btn" class="absolute bottom-0 right-0 bg-pong-primary p-2 rounded-full hover:bg-pong-secondary transition-colors">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
               </button>
+              <input type="file" id="avatar-input" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
             ` : ''}
           </div>
           
           <!-- User Info -->
           <div class="text-center md:text-left flex-1">
             <h1 class="font-game text-3xl text-gradient mb-2">${user.displayName || user.username}</h1>
-            <p class="text-gray-400 mb-4">@${user.username}${isOwnProfile ? ` • ${user.email}` : ''}</p>
+            <p class="text-white/70 mb-4">@${user.username}${isOwnProfile ? ` • ${user.email}` : ''}</p>
             <div class="flex flex-wrap justify-center md:justify-start gap-2">
               <span class="badge ${user.isOnline ? 'badge-online' : 'badge-offline'}">${user.isOnline ? t('profile.online') : t('profile.offline')}</span>
-              ${user.language ? `<span class="text-gray-500">Language: ${user.language.toUpperCase()}</span>` : ''}
+              ${user.language ? `<span class="text-white/50">Language: ${user.language.toUpperCase()}</span>` : ''}
             </div>
           </div>
           
@@ -98,7 +103,11 @@ export async function renderProfilePage(): Promise<void> {
             <a href="/settings" data-link class="btn btn-secondary">
               ${t('profile.editProfile')}
             </a>
-          ` : ''}
+          ` : `
+            <button id="add-friend-btn" class="btn btn-primary" data-user-id="${user.id}">
+              ${t('profile.addFriend')}
+            </button>
+          `}
         </div>
       </div>
       
@@ -107,19 +116,19 @@ export async function renderProfilePage(): Promise<void> {
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="card text-center">
           <div class="font-game text-3xl text-pong-primary">${stats.wins}</div>
-          <div class="text-gray-500">${t('profile.wins')}</div>
+          <div class="text-white/60">${t('profile.wins')}</div>
         </div>
         <div class="card text-center">
           <div class="font-game text-3xl text-red-400">${stats.losses}</div>
-          <div class="text-gray-500">${t('profile.losses')}</div>
+          <div class="text-white/60">${t('profile.losses')}</div>
         </div>
         <div class="card text-center">
           <div class="font-game text-3xl text-pong-secondary">${winRate}%</div>
-          <div class="text-gray-500">${t('profile.winRate')}</div>
+          <div class="text-white/60">${t('profile.winRate')}</div>
         </div>
         <div class="card text-center">
           <div class="font-game text-3xl text-white">${stats.totalGames}</div>
-          <div class="text-gray-500">${t('profile.totalGames')}</div>
+          <div class="text-white/60">${t('profile.totalGames')}</div>
         </div>
       </div>
       
@@ -136,8 +145,8 @@ export async function renderProfilePage(): Promise<void> {
         <!-- Friends -->
         <h2 class="font-game text-xl text-pong-primary mb-4">${t('profile.friends')}</h2>
         <div class="card" id="friends-list">
-          <div class="text-center py-4 text-gray-500">
-            No friends yet. Play some games to make friends!
+          <div class="text-center py-4 text-white/60">
+            ${t('profile.noFriends')}
           </div>
         </div>
       ` : ''}
@@ -146,6 +155,123 @@ export async function renderProfilePage(): Promise<void> {
 
   // Load match history
   loadMatchHistory(user.id);
+
+  // Load friends list (for own profile)
+  if (isOwnProfile) {
+    loadFriendsList(user.id);
+    setupAvatarUpload(user.id);
+  } else {
+    setupAddFriendButton(user.id);
+  }
+}
+
+// Setup avatar upload functionality
+function setupAvatarUpload(userId: number): void {
+  const uploadBtn = document.getElementById('avatar-upload-btn');
+  const avatarInput = document.getElementById('avatar-input') as HTMLInputElement;
+
+  if (uploadBtn && avatarInput) {
+    uploadBtn.addEventListener('click', () => avatarInput.click());
+
+    avatarInput.addEventListener('change', async () => {
+      const file = avatarInput.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      try {
+        const response = await fetch(`/api/users/${userId}/avatar`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Update avatar display
+          const avatarContainer = document.querySelector('.w-32.h-32.rounded-full');
+          if (avatarContainer) {
+            avatarContainer.innerHTML = `<img src="${data.avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />`;
+          }
+        } else {
+          const error = await response.json();
+          alert(error.error || 'Failed to upload avatar');
+        }
+      } catch (err) {
+        console.error('Avatar upload error:', err);
+        alert('Failed to upload avatar');
+      }
+    });
+  }
+}
+
+// Setup add friend button
+function setupAddFriendButton(targetUserId: number): void {
+  const addFriendBtn = document.getElementById('add-friend-btn');
+  if (!addFriendBtn) return;
+
+  addFriendBtn.addEventListener('click', async () => {
+    const currentUser = auth.getUser();
+    if (!currentUser) {
+      router.navigate('/login');
+      return;
+    }
+
+    try {
+      const result = await api.post(`/users/${currentUser.id}/friends`, { friendId: targetUserId });
+      if (result.success) {
+        addFriendBtn.textContent = t('profile.friendRequestPending') || 'Request Sent';
+        addFriendBtn.classList.remove('btn-primary');
+        addFriendBtn.classList.add('btn-secondary', 'opacity-50');
+        (addFriendBtn as HTMLButtonElement).disabled = true;
+      } else {
+        alert(result.error || 'Failed to send friend request');
+      }
+    } catch (err) {
+      console.error('Add friend error:', err);
+      alert('Failed to send friend request');
+    }
+  });
+}
+
+// Load friends list
+async function loadFriendsList(userId: number): Promise<void> {
+  const container = document.getElementById('friends-list');
+  if (!container) return;
+
+  const result = await api.get<{ friends: Array<Record<string, unknown>> }>(`/users/${userId}/friends`);
+
+  if (!result.success || !result.data?.friends || result.data.friends.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-4 text-white/60">
+        ${t('profile.noFriends')}
+      </div>
+    `;
+    return;
+  }
+
+  const friendsHtml = result.data.friends.map((friend) => `
+    <a href="/profile/${friend.id}" data-link class="flex items-center justify-between py-3 border-b border-pong-light last:border-0 hover:bg-white/5 px-2 rounded transition-colors">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-pong-primary/20 flex items-center justify-center overflow-hidden">
+          ${friend.avatar_url && friend.avatar_url !== '/default-avatar.png'
+      ? `<img src="${friend.avatar_url}" alt="${friend.display_name}" class="w-full h-full object-cover" />`
+      : `<span class="text-pong-primary">${(friend.display_name as string)?.charAt(0).toUpperCase() || 'U'}</span>`
+    }
+        </div>
+        <div>
+          <div class="font-medium">${friend.display_name || friend.username}</div>
+          <div class="text-white/50 text-sm">@${friend.username}</div>
+        </div>
+      </div>
+      <span class="badge ${friend.is_online ? 'badge-online' : 'badge-offline'}">
+        ${friend.is_online ? t('profile.online') : t('profile.offline')}
+      </span>
+    </a>
+  `).join('');
+
+  container.innerHTML = `<div class="space-y-0">${friendsHtml}</div>`;
 }
 
 async function loadMatchHistory(userId: number): Promise<void> {
@@ -156,8 +282,8 @@ async function loadMatchHistory(userId: number): Promise<void> {
 
   if (!result.success || !result.data?.matches || result.data.matches.length === 0) {
     container.innerHTML = `
-      <div class="text-center py-8 text-gray-500">
-        No matches played yet. Start playing to see your history!
+      <div class="text-center py-8 text-white/60">
+        ${t('profile.noMatches')}
       </div>
     `;
     return;

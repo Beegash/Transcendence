@@ -94,4 +94,12 @@ export default async function statsRoutes(fastify: FastifyInstance) {
 		const stats = statsService.getGlobalStats();
 		return reply.send({ stats });
 	});
+
+	/**
+	 * POST /sync - Sync all stats from completed matches (admin use)
+	 */
+	fastify.post('/sync', async (_request: FastifyRequest, reply: FastifyReply) => {
+		const result = statsService.syncAllStats();
+		return reply.send({ message: 'Stats synced successfully', ...result });
+	});
 }
