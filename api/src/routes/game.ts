@@ -131,6 +131,13 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 						break;
 					}
 
+					case 'resume_ball': {
+						if (currentRoomId) {
+							roomManager.resumeBall(currentRoomId);
+						}
+						break;
+					}
+
 					case 'ping': {
 						ws.send(JSON.stringify({ type: 'pong' }));
 						break;

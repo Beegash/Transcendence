@@ -135,7 +135,7 @@ export async function renderProfilePage(): Promise<void> {
       <!-- Match History -->
       <h2 class="font-game text-xl text-pong-primary mb-4">${t('profile.matchHistory')}</h2>
       <div class="card mb-8" id="match-history">
-        <div class="text-center py-8 text-gray-500">
+        <div class="text-center py-8 text-white/60">
           <div class="loading-spinner mx-auto mb-4"></div>
           ${t('common.loading')}
         </div>
@@ -181,22 +181,16 @@ function setupAvatarUpload(userId: number): void {
       formData.append('avatar', file);
 
       try {
-        const response = await fetch(`/api/users/${userId}/avatar`, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        });
+        const result = await api.post<{ avatarUrl: string }>(`/users/${userId}/avatar`, formData);
 
-        if (response.ok) {
-          const data = await response.json();
+        if (result.success && result.data) {
           // Update avatar display
           const avatarContainer = document.querySelector('.w-32.h-32.rounded-full');
           if (avatarContainer) {
-            avatarContainer.innerHTML = `<img src="${data.avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />`;
+            avatarContainer.innerHTML = `<img src="${result.data.avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />`;
           }
         } else {
-          const error = await response.json();
-          alert(error.error || 'Failed to upload avatar');
+          alert(result.error || 'Failed to upload avatar');
         }
       } catch (err) {
         console.error('Avatar upload error:', err);
@@ -302,7 +296,7 @@ async function loadMatchHistory(userId: number): Promise<void> {
         </div>
         <div class="text-right">
           <div class="font-game">${match.player1_score} - ${match.player2_score}</div>
-          <div class="text-gray-500 text-sm">${match.match_type}</div>
+          <div class="text-white/60 text-sm">${match.match_type}</div>
         </div>
       </div>
     `;

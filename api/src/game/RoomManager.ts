@@ -194,6 +194,7 @@ class RoomManager {
 
 		room.state.status = 'playing';
 		room.state.ball = this.resetBall();
+		room.state.ballPaused = true;
 
 		this.broadcast(room, {
 			type: 'game_start',
@@ -225,7 +226,29 @@ class RoomManager {
 			aiPlayer.applyMovement(room);
 		}
 
+		this.updateBall(room);
+
+		// Broadcast state
+		this.broadcast(room, {
+			type: 'game_state',
+			state: this.getClientState(room),
+		});
+	}
+
+	/**
+	 * Update ball position and handle collisions
+	 */
+	private updateBall(room: GameRoom): void {
 		const ball = room.state.ball;
+
+		// Don't move ball if paused
+		if (room.state.ballPaused) {
+			return;
+		}
+
+		// Ensure players exist before accessing paddles
+		if (!room.player1 || !room.player2) return;
+
 		const p1Paddle = room.player1.paddleY;
 		const p2Paddle = room.player2.paddleY;
 
@@ -267,12 +290,18 @@ class RoomManager {
 		if (ball.x < 0) {
 			room.state.score.player2++;
 			this.checkWinner(room);
-			room.state.ball = this.resetBall('left');  // Ball goes to player1 (left) who just got scored on
+			if (room.state.status !== 'finished') {
+				room.state.ball = this.resetBall('left');  // Ball goes to player1 (left) who just got scored on
+				room.state.ballPaused = true; // Pause until player presses space/touch
+			}
 		}
 		if (ball.x > CANVAS_WIDTH) {
 			room.state.score.player1++;
 			this.checkWinner(room);
-			room.state.ball = this.resetBall('right');  // Ball goes to player2 (right) who just got scored on
+			if (room.state.status !== 'finished') {
+				room.state.ball = this.resetBall('right');  // Ball goes to player2 (right) who just got scored on
+				room.state.ballPaused = true; // Pause until player presses space/touch
+			}
 		}
 
 		// Broadcast state
@@ -332,6 +361,19 @@ class RoomManager {
 			room.player1.paddleY = position;
 		} else if (room.player2?.id === playerId && !room.player2.isAI) {
 			room.player2.paddleY = position;
+		}
+	}
+
+	/**
+	 * Resume ball after pause (called when player presses space/touch after scoring)
+	 */
+	resumeBall(roomId: string): void {
+		const room = this.rooms.get(roomId);
+		if (!room) return;
+		if (room.state.status !== 'playing') return;
+
+		if (room.state.ballPaused) {
+			room.state.ballPaused = false;
 		}
 	}
 
@@ -397,6 +439,7 @@ class RoomManager {
 				player1: room.player1?.paddleY || 0,
 				player2: room.player2?.paddleY || 0,
 			},
+			ballPaused: room.state.ballPaused,
 		};
 	}
 

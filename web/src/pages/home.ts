@@ -31,7 +31,7 @@ export function renderHomePage(): void {
         <h1 class="font-game text-5xl md:text-7xl font-bold mb-6">
           <span class="text-gradient glow-text">${t('home.title')}</span>
         </h1>
-        <p class="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl mx-auto">
+        <p class="text-xl md:text-2xl text-white/80 mb-12 max-w-2xl mx-auto">
           ${t('home.subtitle')}
         </p>
         
@@ -58,7 +58,7 @@ export function renderHomePage(): void {
               </svg>
             </div>
             <h3 class="font-game text-xl text-pong-primary mb-3">${t('home.features.multiplayer')}</h3>
-            <p class="text-gray-400">${t('home.features.multiplayerDesc')}</p>
+            <p class="text-white/80">${t('home.features.multiplayerDesc')}</p>
           </div>
 
           <!-- Tournaments -->
@@ -69,7 +69,7 @@ export function renderHomePage(): void {
               </svg>
             </div>
             <h3 class="font-game text-xl text-pong-primary mb-3">${t('home.features.tournaments')}</h3>
-            <p class="text-gray-400">${t('home.features.tournamentsDesc')}</p>
+            <p class="text-white/80">${t('home.features.tournamentsDesc')}</p>
           </div>
 
           <!-- AI -->
@@ -80,7 +80,7 @@ export function renderHomePage(): void {
               </svg>
             </div>
             <h3 class="font-game text-xl text-pong-primary mb-3">${t('home.features.ai')}</h3>
-            <p class="text-gray-400">${t('home.features.aiDesc')}</p>
+            <p class="text-white/80">${t('home.features.aiDesc')}</p>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ export function renderHomePage(): void {
 
     <!-- Footer -->
     <footer class="py-8 border-t border-white/10">
-      <div class="max-w-6xl mx-auto px-4 text-center text-gray-500">
+      <div class="max-w-6xl mx-auto px-4 text-center text-white/60">
         <p>© ${new Date().getFullYear()} ft_transcendence • 42 School Project</p>
       </div>
     </footer>

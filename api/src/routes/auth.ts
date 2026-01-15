@@ -74,10 +74,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			try {
 				const result = db
 					.prepare(
-						`INSERT INTO users (email, username, display_name, password_hash) 
-             VALUES (?, ?, ?, ?)`
+						`INSERT INTO users (email, username, display_name, password_hash, avatar_url) 
+             VALUES (?, ?, ?, ?, ?)`
 					)
-					.run(email.toLowerCase(), username.toLowerCase(), username, passwordHash);
+					.run(email.toLowerCase(), username.toLowerCase(), username, passwordHash, '/default-avatar.png');
 
 				// Create user stats entry
 				db.prepare('INSERT INTO user_stats (user_id) VALUES (?)').run(result.lastInsertRowid);

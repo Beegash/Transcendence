@@ -10,6 +10,7 @@ import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 interface UpdateProfileBody {
 	displayName?: string;
 	language?: string;
+	username?: string;
 }
 
 export default async function userRoutes(fastify: FastifyInstance) {
@@ -117,9 +118,34 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				values.push(displayName);
 			}
 
+			const { username } = request.body;
+			if (username !== undefined) {
+				// Validate username format
+				if (username.length < 3 || username.length > 20) {
+					return reply.status(400).send({ error: 'Username must be between 3 and 20 characters' });
+				}
+				if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+					return reply.status(400).send({ error: 'Username can only contain letters, numbers, and underscores' });
+				}
+
+				// Check if username already exists
+				const existingUser = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username.toLowerCase(), userId) as { id: number } | undefined;
+				if (existingUser) {
+					return reply.status(409).send({ error: 'Username already taken' });
+				}
+
+				updates.push('username = ?');
+				values.push(username.toLowerCase());
+
+				// Also update display_name to match username to avoid confusion in UI
+				// (since Navbar and Profile prefer display_name)
+				updates.push('display_name = ?');
+				values.push(username);
+			}
+
 			if (language !== undefined) {
-				if (!['en', 'tr', 'fr'].includes(language)) {
-					return reply.status(400).send({ error: 'Invalid language. Supported: en, tr, fr' });
+				if (!['en', 'tr', 'fr', 'de'].includes(language)) {
+					return reply.status(400).send({ error: 'Invalid language. Supported: en, tr, fr, de' });
 				}
 				updates.push('language = ?');
 				values.push(language);

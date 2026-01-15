@@ -95,10 +95,10 @@ function renderGameMenu(content: HTMLElement): void {
               </svg>
             </div>
             <h2 class="font-game text-xl text-pong-primary mb-2">${t('game.localPlay')}</h2>
-            <p class="text-gray-400 text-sm">
+            <p class="text-white/80 text-sm">
               ${t('game.localPlayDesc')}
             </p>
-            <div class="mt-4 text-gray-500 text-xs">
+            <div class="mt-4 text-white/60 text-xs">
               ${t('game.controls')}
             </div>
           </div>
@@ -113,10 +113,10 @@ function renderGameMenu(content: HTMLElement): void {
               </svg>
             </div>
             <h2 class="font-game text-xl text-yellow-500 mb-2">${t('game.aiPlay')}</h2>
-            <p class="text-gray-400 text-sm">
+            <p class="text-white/80 text-sm">
               ${t('game.aiPlayDesc')}
             </p>
-            <div class="mt-4 text-gray-500 text-xs">
+            <div class="mt-4 text-white/60 text-xs">
               ${t('game.aiRefreshInfo')}
             </div>
           </div>
@@ -131,10 +131,10 @@ function renderGameMenu(content: HTMLElement): void {
               </svg>
             </div>
             <h2 class="font-game text-xl text-pong-secondary mb-2">${t('game.onlinePlay')}</h2>
-            <p class="text-gray-400 text-sm">
+            <p class="text-white/80 text-sm">
               ${t('game.onlinePlayDesc')}
             </p>
-            <div class="mt-4 text-gray-500 text-xs">
+            <div class="mt-4 text-white/60 text-xs">
               ${t('game.realTimeMultiplayer')}
             </div>
           </div>
@@ -157,7 +157,7 @@ function startAIGame(content: HTMLElement): void {
       <h2 class="font-game text-2xl text-yellow-500 mb-8">vs AI</h2>
       
       <div class="card mb-6">
-        <p class="text-gray-400 mb-4">Connecting to game server...</p>
+        <p class="text-white/80 mb-4">Connecting to game server...</p>
         <div class="loading-spinner mx-auto"></div>
       </div>
       
@@ -177,7 +177,7 @@ function startAIGame(content: HTMLElement): void {
 		content.innerHTML = `
       <div class="max-w-lg mx-auto px-4 py-8 text-center">
         <h2 class="font-game text-2xl text-red-500 mb-4">Connection Failed</h2>
-        <p class="text-gray-400 mb-6">Could not connect to game server.</p>
+        <p class="text-white/80 mb-6">Could not connect to game server.</p>
         <button id="back-btn" class="btn btn-secondary">Back to Menu</button>
       </div>
     `;
@@ -247,7 +247,7 @@ function startLocalGame(content: HTMLElement): void {
         <canvas id="game-canvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" class="w-full bg-pong-darker rounded-lg"></canvas>
       </div>
       
-      <p class="text-center text-gray-500 text-sm mt-4">
+      <p class="text-center text-white/60 text-sm mt-4">
         Player 1: W/S • Player 2: ↑/↓ • Press SPACE to start
       </p>
     </div>
@@ -304,6 +304,71 @@ function initLocalGame(): void {
 	cleanupFunctions.push(() => {
 		window.removeEventListener('keydown', keyDownHandler);
 		window.removeEventListener('keyup', keyUpHandler);
+	});
+
+	// Touch controls for mobile
+	let touchStartY1: number | null = null;
+	let touchStartY2: number | null = null;
+
+	const touchStartHandler = (e: TouchEvent) => {
+		if (!gameRunning && !winner) {
+			gameRunning = true;
+		}
+		if (winner) {
+			// Restart on touch when game is over
+			score1 = 0;
+			score2 = 0;
+			winner = null;
+			resetBall();
+			return;
+		}
+
+		Array.from(e.touches).forEach(touch => {
+			const rect = canvas.getBoundingClientRect();
+			const touchX = touch.clientX - rect.left;
+
+			// Left half - player 1, Right half - player 2
+			if (touchX < rect.width / 2) {
+				touchStartY1 = touch.clientY;
+			} else {
+				touchStartY2 = touch.clientY;
+			}
+		});
+	};
+
+	const touchMoveHandler = (e: TouchEvent) => {
+		e.preventDefault(); // Prevent scrolling while playing
+
+		Array.from(e.touches).forEach(touch => {
+			const rect = canvas.getBoundingClientRect();
+			const touchX = touch.clientX - rect.left;
+
+			if (touchX < rect.width / 2 && touchStartY1 !== null) {
+				// Player 1 - left half
+				const deltaY = touch.clientY - touchStartY1;
+				paddle1Y = Math.max(0, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle1Y + deltaY * 2));
+				touchStartY1 = touch.clientY;
+			} else if (touchX >= rect.width / 2 && touchStartY2 !== null) {
+				// Player 2 - right half
+				const deltaY = touch.clientY - touchStartY2;
+				paddle2Y = Math.max(0, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle2Y + deltaY * 2));
+				touchStartY2 = touch.clientY;
+			}
+		});
+	};
+
+	const touchEndHandler = () => {
+		touchStartY1 = null;
+		touchStartY2 = null;
+	};
+
+	canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
+	canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
+	canvas.addEventListener('touchend', touchEndHandler);
+	cleanupFunctions.push(() => {
+		canvas.removeEventListener('touchstart', touchStartHandler);
+		canvas.removeEventListener('touchmove', touchMoveHandler);
+		canvas.removeEventListener('touchend', touchEndHandler);
 	});
 
 	// Track if it's the first serve (for random direction)
@@ -447,14 +512,14 @@ function showOnlineLobby(content: HTMLElement): void {
         <!-- Create Room -->
         <div class="card">
           <h3 class="font-game text-lg text-pong-primary mb-4">Create Room</h3>
-          <p class="text-gray-400 text-sm mb-4">Create a new room and share the code with your friend.</p>
+          <p class="text-white/80 text-sm mb-4">Create a new room and share the code with your friend.</p>
           <button id="create-room-btn" class="btn btn-primary w-full">Create Room</button>
         </div>
         
         <!-- Join Room -->
         <div class="card">
           <h3 class="font-game text-lg text-pong-secondary mb-4">Join Room</h3>
-          <p class="text-gray-400 text-sm mb-4">Enter a room code to join an existing game.</p>
+          <p class="text-white/80 text-sm mb-4">Enter a room code to join an existing game.</p>
           <div class="flex gap-2">
             <input type="text" id="room-code-input" class="input flex-1 uppercase" placeholder="ROOM CODE" maxlength="6">
             <button id="join-room-btn" class="btn btn-secondary">Join</button>
@@ -465,14 +530,14 @@ function showOnlineLobby(content: HTMLElement): void {
         <div class="card">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-game text-lg text-purple-400">Available Rooms</h3>
-            <button id="refresh-rooms-btn" class="text-gray-500 hover:text-white text-sm">↻ Refresh</button>
+            <button id="refresh-rooms-btn" class="text-white/60 hover:text-white text-sm">↻ Refresh</button>
           </div>
           <div id="rooms-list" class="space-y-2">
-            <div class="text-center text-gray-500 text-sm py-4">Loading rooms...</div>
+            <div class="text-center text-white/60 text-sm py-4">Loading rooms...</div>
           </div>
         </div>
         
-        <div id="connection-status" class="text-center text-gray-500 text-sm"></div>
+        <div id="connection-status" class="text-center text-white/60 text-sm"></div>
         <div id="lobby-error" class="hidden bg-red-500/10 text-red-400 px-4 py-3 rounded-lg text-sm"></div>
       </div>
     </div>
@@ -495,13 +560,13 @@ function showOnlineLobby(content: HTMLElement): void {
 			);
 
 			if (waitingRooms.length === 0) {
-				roomsList.innerHTML = '<div class="text-center text-gray-500 text-sm py-4">No rooms available. Create one!</div>';
+				roomsList.innerHTML = '<div class="text-center text-white/60 text-sm py-4">No rooms available. Create one!</div>';
 			} else {
 				roomsList.innerHTML = waitingRooms.map((room: { id: string; players: number }) => `
 					<div class="flex items-center justify-between bg-pong-darker p-3 rounded-lg">
 						<div>
 							<span class="font-game text-pong-primary">${room.id}</span>
-							<span class="text-gray-500 text-xs ml-2">(${room.players}/2 players)</span>
+							<span class="text-white/60 text-xs ml-2">(${room.players}/2 players)</span>
 						</div>
 						<button class="btn btn-sm btn-primary join-room-quick" data-room="${room.id}">Join</button>
 					</div>
@@ -598,17 +663,17 @@ function showWaitingRoom(content: HTMLElement, roomId: string): void {
       <h2 class="font-game text-2xl text-pong-primary mb-8">Waiting for Opponent</h2>
       
       <div class="card mb-6">
-        <p class="text-gray-400 mb-2">Room Code:</p>
+        <p class="text-white/80 mb-2">Room Code:</p>
         <p class="font-game text-4xl text-gradient tracking-widest" id="room-id">${roomId}</p>
         <button id="copy-code-btn" class="btn btn-secondary text-sm mt-4">Copy Code</button>
       </div>
       
-      <div class="flex items-center justify-center gap-2 text-gray-500">
+      <div class="flex items-center justify-center gap-2 text-white/60">
         <div class="loading-spinner"></div>
         <span>Waiting for Player 2 to join...</span>
       </div>
       
-      <p class="text-gray-600 text-sm mt-6">You are Player ${playerNumber}</p>
+      <p class="text-white/50 text-sm mt-6">You are Player ${playerNumber}</p>
       
       <button id="cancel-btn" class="btn btn-secondary mt-8">Cancel</button>
     </div>
@@ -647,7 +712,7 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
       <h2 class="font-game text-2xl text-pong-primary mb-8">Opponent Joined!</h2>
       
       <div class="card mb-6">
-        <p class="text-gray-400 mb-2">Playing against:</p>
+        <p class="text-white/80 mb-2">Playing against:</p>
         <p class="font-game text-2xl text-pong-secondary">${opponentName || 'Anonymous'}</p>
       </div>
       
@@ -704,7 +769,8 @@ function startOnlineGame(content: HTMLElement, initialState: GameState): void {
       </div>
       
       <p class="text-center text-white/60 text-sm mt-4">
-        Use ↑/↓ or W/S to move your paddle
+        <span class="hidden md:inline">Use ↑/↓ or W/S to move your paddle</span>
+        <span class="md:hidden">Swipe up/down on screen to move your paddle</span>
       </p>
     </div>
   `;
@@ -725,6 +791,10 @@ function initOnlineGame(initialState: GameState): void {
 
 	const keyDownHandler = (e: KeyboardEvent) => {
 		keys[e.key] = true;
+		// Resume ball when space is pressed and ball is paused
+		if (e.key === ' ' && gameState.ballPaused) {
+			gameSocket.resumeBall();
+		}
 	};
 	const keyUpHandler = (e: KeyboardEvent) => {
 		keys[e.key] = false;
@@ -735,6 +805,45 @@ function initOnlineGame(initialState: GameState): void {
 	cleanupFunctions.push(() => {
 		window.removeEventListener('keydown', keyDownHandler);
 		window.removeEventListener('keyup', keyUpHandler);
+	});
+
+	// Touch controls for mobile (single player touches anywhere to control their paddle)
+	let touchStartY: number | null = null;
+	let touchMoved = false;
+
+	const touchStartHandler = (e: TouchEvent) => {
+		if (e.touches.length > 0) {
+			touchStartY = e.touches[0].clientY;
+			touchMoved = false;
+		}
+	};
+
+	const touchMoveHandler = (e: TouchEvent) => {
+		e.preventDefault(); // Prevent page scrolling
+		if (touchStartY !== null && e.touches.length > 0) {
+			const deltaY = e.touches[0].clientY - touchStartY;
+			myPaddleY = Math.max(0, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, myPaddleY + deltaY * 2));
+			touchStartY = e.touches[0].clientY;
+			touchMoved = true;
+			gameSocket.movePaddle(myPaddleY);
+		}
+	};
+
+	const touchEndHandler = () => {
+		// If user tapped without swiping and ball is paused, resume it
+		if (!touchMoved && gameState.ballPaused) {
+			gameSocket.resumeBall();
+		}
+		touchStartY = null;
+	};
+
+	canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
+	canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
+	canvas.addEventListener('touchend', touchEndHandler);
+	cleanupFunctions.push(() => {
+		canvas.removeEventListener('touchstart', touchStartHandler);
+		canvas.removeEventListener('touchmove', touchMoveHandler);
+		canvas.removeEventListener('touchend', touchEndHandler);
 	});
 
 	// Listen for game state updates
@@ -828,6 +937,11 @@ function initOnlineGame(initialState: GameState): void {
 			ctx.fillStyle = isWinner ? '#C0392B' : '#3498DB';
 			const message = isWinner ? t('game.youWin') : t('game.youLose');
 			ctx.fillText(message, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+		} else if (gameState.ballPaused) {
+			// Show pause message when ball is waiting for input
+			ctx.font = '16px Inter, sans-serif';
+			ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+			ctx.fillText(t('game.pressSpace'), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 		}
 	}
 
@@ -848,11 +962,11 @@ function startOnlineTournament(content: HTMLElement, tournamentId: number, match
 	content.innerHTML = `
 		<div class="max-w-lg mx-auto px-4 py-8 text-center">
 			<h2 class="font-game text-2xl text-yellow-500 mb-8">Tournament Match</h2>
-			<div id="connection-status" class="text-center text-gray-500 text-sm mb-4">Connecting to match...</div>
+			<div id="connection-status" class="text-center text-white/60 text-sm mb-4">Connecting to match...</div>
 			<div id="tournament-lobby-error" class="hidden bg-red-500/10 text-red-400 px-4 py-3 rounded-lg text-sm mb-4"></div>
 			
 			<div class="card p-6">
-				<p class="text-gray-400 mb-2">Match ID:</p>
+				<p class="text-white/80 mb-2">Match ID:</p>
 				<p class="font-game text-2xl text-gradient">${matchId}</p>
 			</div>
 		</div>
@@ -914,11 +1028,11 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
       
       <div class="flex justify-between items-center mt-6">
           <div class="font-game text-xl"><span class="${playerNumber === 1 ? 'text-green-400' : 'text-blue-400'}">YOU</span>: Player ${playerNumber} (${playerNumber === 1 ? 'Green' : 'Blue'})</div>
-          <div class="text-gray-500">First to ${WINNING_SCORE} wins</div>
+          <div class="text-white/60">First to ${WINNING_SCORE} wins</div>
           <div class="text-pong-secondary font-game text-xl">OPPONENT</div>
       </div>
       
-      <p class="text-center text-gray-500 text-sm mt-4">
+      <p class="text-center text-white/60 text-sm mt-4">
         Use ↑/↓ or W/S to move your paddle
       </p>
     </div>
@@ -980,7 +1094,7 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 			if (spinner) spinner.classList.add('hidden');
 			if (text) text.innerHTML = `
 				<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
-				<div class="text-gray-400">${t('game.savingResult')}</div>
+				<div class="text-white/80">${t('game.savingResult')}</div>
 			`;
 			savingOverlay.classList.remove('hidden');
 		}
@@ -999,7 +1113,7 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 				const text = savingOverlay.querySelector('p');
 				if (text) text.innerHTML = `
 					<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
-					<div class="text-gray-400">${t('game.pressSpace')}</div>
+					<div class="text-white/80">${t('game.pressSpace')}</div>
 				`;
 			}
 			resultSaved = true;
@@ -1010,7 +1124,7 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 				const text = savingOverlay.querySelector('p');
 				if (text) text.innerHTML = `
 					<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
-					<div class="text-gray-400">${t('game.pressSpace')}</div>
+					<div class="text-white/80">${t('game.pressSpace')}</div>
 				`;
 			}
 		}
@@ -1038,48 +1152,57 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 		const isP2 = playerNumber === 2;
 		const flipX = (x: number, width: number) => isP2 ? CANVAS_WIDTH - x - width : x;
 
-		ctx.fillStyle = '#050508';
+		// Clear - Pong Table Green (consistent with all modes)
+		ctx.fillStyle = '#326255';
 		ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-		// Center line
+		// Center line (net)
 		ctx.setLineDash([10, 10]);
-		ctx.strokeStyle = '#1a1a2e';
+		ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+		ctx.lineWidth = 2;
 		ctx.beginPath();
 		ctx.moveTo(CANVAS_WIDTH / 2, 0);
 		ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// Paddles
+		// Paddles - Red (P1) and Navy (P2)
 		const p1X = flipX(0, PADDLE_WIDTH);
 		const p2X = flipX(CANVAS_WIDTH - PADDLE_WIDTH, PADDLE_WIDTH);
 
-		ctx.fillStyle = '#00ff88';
+		ctx.fillStyle = '#C0392B'; // P1 color - Red
 		ctx.fillRect(p1X, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
-		ctx.fillStyle = '#0088ff';
+		ctx.fillStyle = '#3498DB'; // P2 color - Navy
 		ctx.fillRect(p2X, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
 
-		// Ball
+		// Ball - Orange Circle
 		const ballX = flipX(gameState.ball.x, BALL_SIZE);
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(ballX, gameState.ball.y, BALL_SIZE, BALL_SIZE);
+		ctx.fillStyle = '#EA871E';
+		ctx.beginPath();
+		ctx.arc(ballX + BALL_SIZE / 2, gameState.ball.y + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
+		ctx.fill();
 
 		// Score
 		const p1ScoreX = isP2 ? (CANVAS_WIDTH / 4) * 3 : CANVAS_WIDTH / 4;
 		const p2ScoreX = isP2 ? CANVAS_WIDTH / 4 : (CANVAS_WIDTH / 4) * 3;
 
 		ctx.font = '48px Orbitron, monospace';
-		ctx.fillStyle = '#00ff88';
+		ctx.fillStyle = '#C0392B';
 		ctx.textAlign = 'center';
 		ctx.fillText(gameState.score.player1.toString(), p1ScoreX, 60);
-		ctx.fillStyle = '#0088ff';
+		ctx.fillStyle = '#3498DB';
 		ctx.fillText(gameState.score.player2.toString(), p2ScoreX, 60);
 
 		if (gameState.status === 'finished' && gameState.winner) {
 			ctx.font = '32px Orbitron, monospace';
 			const isWinner = gameState.winner === playerNumber;
-			ctx.fillStyle = isWinner ? '#00ff88' : '#ff4444';
+			ctx.fillStyle = isWinner ? '#C0392B' : '#3498DB';
 			ctx.fillText(isWinner ? t('game.youWin') : t('game.youLose'), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+		} else if (gameState.ballPaused) {
+			// Show pause message when ball is waiting for input
+			ctx.font = '16px Inter, sans-serif';
+			ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+			ctx.fillText(t('game.pressSpace'), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 		}
 	}
 

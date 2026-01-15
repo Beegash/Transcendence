@@ -37,20 +37,32 @@ export function renderSettingsPage(): void {
         </select>
       </div>
       
+      <!-- Username Change -->
+      <div class="card mb-6">
+        <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.changeUsername') || 'Change Username'}</h2>
+        <p class="text-white/60 text-sm mb-4">${t('settings.usernameHint') || 'Username must be 3-20 characters, letters, numbers, and underscores only.'}</p>
+        <div class="flex gap-2">
+          <input type="text" id="new-username-input" class="input flex-1" placeholder="${auth.getUser()?.username || ''}" maxlength="20" />
+          <button id="change-username-btn" class="btn btn-primary">${t('common.save') || 'Save'}</button>
+        </div>
+        <div id="username-error" class="text-red-400 text-sm mt-2 hidden"></div>
+        <div id="username-success" class="text-green-400 text-sm mt-2 hidden"></div>
+      </div>
+      
       <!-- Notifications -->
       <div class="card mb-6">
         <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.notifications')}</h2>
         <div class="space-y-4">
           <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-gray-300">${t('settings.gameInvitations')}</span>
+            <span class="text-white">${t('settings.gameInvitations')}</span>
             <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
           </label>
           <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-gray-300">${t('settings.tournamentUpdates')}</span>
+            <span class="text-white">${t('settings.tournamentUpdates')}</span>
             <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
           </label>
           <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-gray-300">${t('settings.friendRequests')}</span>
+            <span class="text-white">${t('settings.friendRequests')}</span>
             <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
           </label>
         </div>
@@ -78,7 +90,7 @@ export function renderSettingsPage(): void {
       <!-- Danger Zone -->
       <div class="card border-red-500/30">
         <h2 class="font-game text-lg text-red-400 mb-4">${t('settings.dangerZone')}</h2>
-        <p class="text-gray-500 text-sm mb-4">
+        <p class="text-white/60 text-sm mb-4">
           ${t('settings.dangerZoneWarning')}
         </p>
         <button id="delete-account-btn" class="btn btn-danger w-full">
@@ -90,10 +102,10 @@ export function renderSettingsPage(): void {
       <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80">
         <div class="card max-w-md mx-4">
           <h3 class="font-game text-xl text-red-400 mb-4">Confirm Account Deletion</h3>
-          <p class="text-gray-400 mb-6">
+          <p class="text-white/80 mb-6">
             This action cannot be undone. All your data, including match history, stats, and friends list will be permanently deleted.
           </p>
-          <p class="text-gray-400 mb-6">
+          <p class="text-white/80 mb-6">
             Type <strong class="text-white">DELETE</strong> to confirm:
           </p>
           <input type="text" id="delete-confirm-input" class="input mb-4" placeholder="Type DELETE">
@@ -111,6 +123,66 @@ export function renderSettingsPage(): void {
   langSelect?.addEventListener('change', (e) => {
     const target = e.target as HTMLSelectElement;
     i18n.setLanguage(target.value as Language);
+  });
+
+  // Username change
+  const usernameInput = document.getElementById('new-username-input') as HTMLInputElement;
+  const changeUsernameBtn = document.getElementById('change-username-btn') as HTMLButtonElement;
+  const usernameError = document.getElementById('username-error')!;
+  const usernameSuccess = document.getElementById('username-success')!;
+
+  changeUsernameBtn?.addEventListener('click', async () => {
+    const newUsername = usernameInput.value.trim();
+
+    // Reset messages
+    usernameError.classList.add('hidden');
+    usernameSuccess.classList.add('hidden');
+
+    // Validate input
+    if (!newUsername) {
+      usernameError.textContent = t('settings.usernameRequired') || 'Please enter a username';
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    if (newUsername.length < 3 || newUsername.length > 20) {
+      usernameError.textContent = t('settings.usernameLengthError') || 'Username must be 3-20 characters';
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
+      usernameError.textContent = t('settings.usernameFormatError') || 'Only letters, numbers, and underscores allowed';
+      usernameError.classList.remove('hidden');
+      return;
+    }
+
+    changeUsernameBtn.disabled = true;
+    changeUsernameBtn.textContent = '...';
+
+    const user = auth.getUser();
+    if (!user) {
+      router.navigate('/login');
+      return;
+    }
+
+    const result = await api.put(`/users/${user.id}`, { username: newUsername });
+
+    if (result.success) {
+      usernameSuccess.textContent = t('settings.usernameChanged') || 'Username changed successfully!';
+      usernameSuccess.classList.remove('hidden');
+      usernameInput.value = '';
+      usernameInput.placeholder = newUsername.toLowerCase();
+
+      // Refresh user data
+      await auth.fetchCurrentUser();
+    } else {
+      usernameError.textContent = result.error || 'Failed to change username';
+      usernameError.classList.remove('hidden');
+    }
+
+    changeUsernameBtn.disabled = false;
+    changeUsernameBtn.textContent = t('common.save') || 'Save';
   });
 
   // Delete account modal

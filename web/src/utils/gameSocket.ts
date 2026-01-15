@@ -11,6 +11,7 @@ export interface GameState {
 	status: 'waiting' | 'ready' | 'playing' | 'finished';
 	winner?: 1 | 2;
 	paddles: { player1: number; player2: number };
+	ballPaused?: boolean;
 }
 
 export interface GameMessage {
@@ -147,6 +148,13 @@ class GameSocket {
 	 */
 	ready(): void {
 		this.send({ type: 'ready' });
+	}
+
+	/**
+	 * Resume ball after pause (space/touch pressed)
+	 */
+	resumeBall(): void {
+		this.send({ type: 'resume_ball' });
 	}
 
 	/**

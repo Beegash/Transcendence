@@ -27,6 +27,7 @@ export interface GameState {
 	score: { player1: number; player2: number };
 	status: 'waiting' | 'ready' | 'playing' | 'finished';
 	winner?: 1 | 2;
+	ballPaused?: boolean; // Ball is paused after each point, waiting for player input
 }
 
 export interface GameRoom {
@@ -46,4 +47,5 @@ export interface ClientGameState {
 	status: string;
 	winner?: 1 | 2;
 	paddles: { player1: number; player2: number };
+	ballPaused?: boolean;
 }

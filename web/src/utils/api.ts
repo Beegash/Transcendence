@@ -31,12 +31,13 @@ class ApiClient {
 		const { method = 'GET', body, headers = {} } = options;
 
 		// Get auth token from localStorage
+		const isFormData = body instanceof FormData;
 		const token = localStorage.getItem('auth_token');
 
 		const config: RequestInit = {
 			method,
 			headers: {
-				'Content-Type': 'application/json',
+				...(isFormData ? {} : { 'Content-Type': 'application/json' }),
 				...(token ? { Authorization: `Bearer ${token}` } : {}),
 				...headers,
 			},
@@ -44,7 +45,7 @@ class ApiClient {
 		};
 
 		if (body && method !== 'GET') {
-			config.body = JSON.stringify(body);
+			config.body = isFormData ? (body as any) : JSON.stringify(body);
 		}
 
 		try {

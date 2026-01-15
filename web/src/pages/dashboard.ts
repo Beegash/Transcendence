@@ -76,20 +76,20 @@ export async function renderDashboardPage(): Promise<void> {
       </div>
       
       <div class="grid md:grid-cols-3 gap-8">
-        <!-- User Stats (if logged in) -->
-        <div class="md:col-span-2 space-y-6">
-          <div id="user-stats-section"></div>
-          <div id="match-history-section"></div>
-        </div>
-        
-        <!-- Leaderboard -->
-        <div>
+        <!-- Leaderboard (first on mobile) -->
+        <div class="order-first md:order-last">
           <div id="leaderboard-section">
             <div class="card">
-              <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 Leaderboard</h2>
-              <div class="text-center text-gray-500">Loading...</div>
+              <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 ${t('dashboard.leaderboard')}</h2>
+              <div class="text-center text-white/60">${t('common.loading')}</div>
             </div>
           </div>
+        </div>
+        
+        <!-- User Stats (if logged in) -->
+        <div class="md:col-span-2 space-y-6 order-last md:order-first">
+          <div id="user-stats-section"></div>
+          <div id="match-history-section"></div>
         </div>
       </div>
     </div>
@@ -163,7 +163,7 @@ async function loadUserStats(): Promise<void> {
     container.innerHTML = `
       <div class="card">
         <h2 class="font-game text-xl text-pong-primary mb-4">Your Stats</h2>
-        <p class="text-gray-500 text-center py-4">No stats yet. Play some games!</p>
+        <p class="text-white/60 text-center py-4">No stats yet. Play some games!</p>
       </div>
     `;
     return;
@@ -252,7 +252,7 @@ async function loadMatchHistory(): Promise<void> {
     container.innerHTML = `
       <div class="card">
         <h2 class="font-game text-lg text-pong-secondary mb-4">Match History</h2>
-        <p class="text-gray-500 text-center py-4">No matches played yet</p>
+        <p class="text-white/60 text-center py-4">No matches played yet</p>
       </div>
     `;
     return;
@@ -273,7 +273,7 @@ async function loadMatchHistory(): Promise<void> {
             </div>
             <div class="text-right">
               <span class="font-game text-lg">${m.player_score} - ${m.opponent_score}</span>
-              ${m.played_at ? `<div class="text-gray-500 text-xs">${formatDate(m.played_at)}</div>` : ''}
+              ${m.played_at ? `<div class="text-white/60 text-xs">${formatDate(m.played_at)}</div>` : ''}
             </div>
           </div>
         `).join('')}
@@ -292,7 +292,7 @@ async function loadLeaderboard(): Promise<void> {
     container.innerHTML = `
       <div class="card">
         <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 Leaderboard</h2>
-        <p class="text-gray-500 text-center py-4">No players yet</p>
+        <p class="text-white/60 text-center py-4">No players yet</p>
       </div>
     `;
     return;
@@ -310,9 +310,9 @@ async function loadLeaderboard(): Promise<void> {
             <img src="${p.avatar_url}" alt="" class="w-8 h-8 rounded-full">
             <div class="flex-1">
               <div class="text-white text-sm">${p.display_name}</div>
-              <div class="text-gray-500 text-xs">${p.wins}W - ${p.losses}L</div>
+              <div class="text-white/60 text-xs">${p.wins}W - ${p.losses}L</div>
             </div>
-            <span class="font-game text-sm ${p.win_rate >= 50 ? 'text-green-400' : 'text-gray-400'}">${p.win_rate}%</span>
+            <span class="font-game text-sm ${p.win_rate >= 50 ? 'text-green-400' : 'text-white/80'}">${p.win_rate}%</span>
           </div>
         `).join('')}
       </div>
@@ -325,7 +325,7 @@ function getMatchTypeBadge(type: string): string {
     case 'tournament': return 'bg-yellow-500/20 text-yellow-400';
     case 'ai': return 'bg-purple-500/20 text-purple-400';
     case 'casual': return 'bg-blue-500/20 text-blue-400';
-    default: return 'bg-gray-500/20 text-gray-400';
+    default: return 'bg-gray-500/20 text-white/80';
   }
 }
 
@@ -337,9 +337,9 @@ function formatDate(dateStr: string): string {
 function getRankColor(rank: number): string {
   switch (rank) {
     case 1: return 'text-yellow-400';
-    case 2: return 'text-gray-300';
+    case 2: return 'text-white';
     case 3: return 'text-amber-600';
-    default: return 'text-gray-500';
+    default: return 'text-white/60';
   }
 }
 

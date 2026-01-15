@@ -89,11 +89,11 @@ async function renderTournamentList(content: HTMLElement): Promise<void> {
         <h2 class="font-game text-xl text-pong-primary mb-4">${t('tournament.createTournament')}</h2>
         <form id="create-tournament-form" class="flex flex-wrap gap-4 items-end">
           <div class="flex-1 min-w-[200px]">
-            <label class="block text-sm text-gray-400 mb-2">${t('tournament.tournamentName')}</label>
+            <label class="block text-sm text-white/80 mb-2">${t('tournament.tournamentName')}</label>
             <input type="text" name="name" class="input" placeholder="Epic Pong Championship" required>
           </div>
           <div class="w-32">
-            <label class="block text-sm text-gray-400 mb-2">${t('tournament.maxPlayers')}</label>
+            <label class="block text-sm text-white/80 mb-2">${t('tournament.maxPlayers')}</label>
             <select name="maxPlayers" class="input">
               <option value="4">4</option>
               <option value="8" selected>8</option>
@@ -107,7 +107,7 @@ async function renderTournamentList(content: HTMLElement): Promise<void> {
       
       <!-- Tournament List -->
       <div id="tournament-list" class="space-y-4">
-        <div class="text-center text-gray-500">${t('tournament.loadingTournaments')}</div>
+        <div class="text-center text-white/60">${t('tournament.loadingTournaments')}</div>
       </div>
     </div>
   `;
@@ -144,7 +144,7 @@ async function loadTournaments(): Promise<void> {
 
   if (!result.success || !result.data?.tournaments.length) {
     listDiv.innerHTML = `
-      <div class="text-center text-gray-500 py-8">
+      <div class="text-center text-white/60 py-8">
         ${t('tournament.noTournamentsYet')}
       </div>
     `;
@@ -161,7 +161,7 @@ async function loadTournaments(): Promise<void> {
             <h3 class="font-game text-lg">${tournament.name}</h3>
             <span class="badge ${getStatusBadgeClass(tournament.status)}">${getStatusLabel(tournament.status)}</span>
           </div>
-          <div class="text-gray-500 text-sm mb-4">
+          <div class="text-white/60 text-sm mb-4">
             <p>${t('tournament.maxPlayersInfo', { count: tournament.max_players.toString() })}</p>
             <p>${t('tournament.createdOn')} ${new Date(tournament.created_at).toLocaleDateString()}</p>
           </div>
@@ -187,7 +187,7 @@ async function renderTournamentDetail(content: HTMLElement, id: number): Promise
   cleanup();
   content.innerHTML = `
     <div class="max-w-5xl mx-auto px-4 py-8">
-      <div class="text-center text-gray-500">Loading tournament...</div>
+      <div class="text-center text-white/60">Loading tournament...</div>
     </div>
   `;
 
@@ -224,7 +224,7 @@ async function renderTournamentDetail(content: HTMLElement, id: number): Promise
         <div class="card mb-6">
           <h2 class="font-game text-lg text-pong-primary mb-4">${t('tournament.join')}</h2>
           <form id="join-form">
-            <p class="text-gray-400 mb-4">${t('tournament.clickToJoin')} <span class="text-pong-secondary">${localStorage.getItem('username') || t('tournament.yourself')}</span>.</p>
+            <p class="text-white/80 mb-4">${t('tournament.clickToJoin')} <span class="text-pong-secondary">${localStorage.getItem('username') || t('tournament.yourself')}</span>.</p>
             <button type="submit" class="btn btn-primary w-full">${t('tournament.join')}</button>
           </form>
           <div id="join-error" class="hidden mt-2 text-red-400 text-sm"></div>
@@ -264,7 +264,7 @@ async function renderTournamentDetail(content: HTMLElement, id: number): Promise
                 </div>
               `;
   }).join('')}
-          ${participants.length === 0 ? `<span class="text-gray-500">${t('tournament.noParticipants')}</span>` : ''}
+          ${participants.length === 0 ? `<span class="text-white/60">${t('tournament.noParticipants')}</span>` : ''}
         </div>
       </div>
       
@@ -272,7 +272,7 @@ async function renderTournamentDetail(content: HTMLElement, id: number): Promise
       ${isActive || tournament.status === 'completed' ? `
         <div id="bracket-container">
           <h2 class="font-game text-lg text-pong-primary mb-4">${t('tournament.bracket')}</h2>
-          <div class="text-center text-gray-500">${t('tournament.loadingBracket')}</div>
+          <div class="text-center text-white/60">${t('tournament.loadingBracket')}</div>
         </div>
       ` : ''}
     </div>
@@ -368,17 +368,17 @@ async function loadBracket(tournamentId: number): Promise<void> {
 
     bracketHTML += `
       <div class="space-y-4">
-        <div class="text-center text-gray-500 text-sm font-game">${roundName}</div>
+        <div class="text-center text-white/60 text-sm font-game">${roundName}</div>
         ${matches.map(m => `
           <div class="card bg-pong-dark p-3 w-44 ${m.status === 'pending' && m.player1_alias && m.player2_alias ? 'border-2 border-yellow-500' : ''}">
             <div class="flex justify-between items-center border-b border-pong-light pb-2 mb-2">
-              <span class="${m.player1_score > m.player2_score && m.status === 'completed' ? 'text-pong-primary font-bold' : 'text-gray-400'}">
+              <span class="${m.player1_score > m.player2_score && m.status === 'completed' ? 'text-pong-primary font-bold' : 'text-white/80'}">
                 ${m.player1_alias || 'TBD'}
               </span>
               <span class="font-game ${m.player1_score > m.player2_score ? 'text-pong-primary' : ''}">${m.status === 'completed' ? m.player1_score : '-'}</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="${m.player2_score > m.player1_score && m.status === 'completed' ? 'text-pong-primary font-bold' : 'text-gray-400'}">
+              <span class="${m.player2_score > m.player1_score && m.status === 'completed' ? 'text-pong-primary font-bold' : 'text-white/80'}">
                 ${m.player2_alias || 'TBD'}
               </span>
               <span class="font-game ${m.player2_score > m.player1_score ? 'text-pong-primary' : ''}">${m.status === 'completed' ? m.player2_score : '-'}</span>
@@ -412,7 +412,7 @@ async function loadBracket(tournamentId: number): Promise<void> {
       <div class="flex items-center">
         <div class="card bg-pong-dark p-4 w-44 text-center border-2 border-yellow-500">
           <div class="text-yellow-500 text-3xl mb-2">🏆</div>
-          <div class="text-gray-500 text-sm">${t('game.champion')}</div>
+          <div class="text-white/60 text-sm">${t('game.champion')}</div>
           <div class="font-game text-lg text-pong-primary">${winnerAlias || 'TBD'}</div>
         </div>
       </div>
@@ -438,7 +438,7 @@ function getStatusBadgeClass(status: string): string {
     case 'pending': return 'bg-yellow-500/20 text-yellow-400';
     case 'active': return 'bg-green-500/20 text-green-400';
     case 'completed': return 'bg-blue-500/20 text-blue-400';
-    default: return 'bg-gray-500/20 text-gray-400';
+    default: return 'bg-gray-500/20 text-white/80';
   }
 }
 
