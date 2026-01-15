@@ -417,45 +417,64 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				return reply.status(403).send({ error: 'Unauthorized' });
 			}
 
-			try {
-				const data = await request.file();
-				if (!data) {
-					return reply.status(400).send({ error: 'No file uploaded' });
-				}
-
-				// Validate file type
-				const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-				if (!allowedTypes.includes(data.mimetype)) {
-					return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
-				}
-
-				// Read file buffer
-				const buffer = await data.toBuffer();
-
-				// Generate filename
-				const ext = data.mimetype.split('/')[1];
-				const filename = `avatar_${userId}_${Date.now()}.${ext}`;
-
-				// Save to uploads directory
-				const fs = await import('fs/promises');
-				const path = await import('path');
-				const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
-
-				// Create directory if not exists
-				await fs.mkdir(uploadsDir, { recursive: true });
-
-				const filePath = path.join(uploadsDir, filename);
-				await fs.writeFile(filePath, buffer);
-
-				// Update database with new avatar URL
-				const avatarUrl = `/uploads/avatars/${filename}`;
-				db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(avatarUrl, userId);
-
-				return reply.send({ message: 'Avatar uploaded successfully', avatarUrl });
-			} catch (error) {
-				fastify.log.error(error);
-				return reply.status(500).send({ error: 'Failed to upload avatar' });
+		try {
+			const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+			const data = await request.file({ limits: { fileSize: MAX_FILE_SIZE } });
+			if (!data) {
+				return reply.status(400).send({ error: 'No file uploaded' });
 			}
+
+			// Validate file type (accept both image/jpeg and image/jpg MIME types)
+			const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+			if (!allowedTypes.includes(data.mimetype)) {
+				return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
+			}
+
+			// Read file buffer
+			const buffer = await data.toBuffer();
+
+			// Generate filename - normalize both jpeg and jpg MIME types to .jpg extension
+			let ext = data.mimetype.split('/')[1];
+			if (ext === 'jpeg' || ext === 'jpg') {
+				ext = 'jpg';
+			}
+			const filename = `avatar_${userId}_${Date.now()}.${ext}`;
+
+			// Save to uploads directory
+			const fs = await import('fs/promises');
+			const path = await import('path');
+			const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+
+			// Create directory if not exists
+			await fs.mkdir(uploadsDir, { recursive: true });
+
+			const filePath = path.join(uploadsDir, filename);
+			await fs.writeFile(filePath, buffer);
+
+			// Update database with new avatar URL
+			const avatarUrl = `/uploads/avatars/${filename}`;
+			db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(avatarUrl, userId);
+
+			return reply.send({ message: 'Avatar uploaded successfully', avatarUrl });
+		} catch (error: any) {
+			fastify.log.error(error);
+			
+			// Check for file size limit errors
+			if (error.code === 'FST_ERR_REQ_FILE_TOO_LARGE' || error.message?.includes('file too large') || error.message?.includes('File size limit exceeded')) {
+				return reply.status(413).send({ 
+					error: 'File size too large. Maximum file size is 5MB. Please compress or resize your image.' 
+				});
+			}
+			
+			// Check for multipart errors
+			if (error.code === 'FST_ERR_BUSY_REQUEST' || error.message?.includes('multipart')) {
+				return reply.status(400).send({ 
+					error: 'File upload error. Please try again with a smaller file.' 
+				});
+			}
+			
+			return reply.status(500).send({ error: 'Failed to upload avatar' });
+		}
 		}
 	);
 

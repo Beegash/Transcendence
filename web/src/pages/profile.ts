@@ -85,7 +85,7 @@ export async function renderProfilePage(): Promise<void> {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
               </button>
-              <input type="file" id="avatar-input" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+              <input type="file" id="avatar-input" class="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" />
             ` : ''}
           </div>
           
@@ -177,6 +177,14 @@ function setupAvatarUpload(userId: number): void {
       const file = avatarInput.files?.[0];
       if (!file) return;
 
+      // Check file size before uploading (5MB limit)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      if (file.size > MAX_FILE_SIZE) {
+        alert('File size too large. Maximum file size is 5MB. Please compress or resize your image.');
+        avatarInput.value = ''; // Reset input
+        return;
+      }
+
       const formData = new FormData();
       formData.append('avatar', file);
 
@@ -195,6 +203,9 @@ function setupAvatarUpload(userId: number): void {
       } catch (err) {
         console.error('Avatar upload error:', err);
         alert('Failed to upload avatar');
+      } finally {
+        // Reset input to allow selecting the same file again
+        avatarInput.value = '';
       }
     });
   }
