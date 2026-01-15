@@ -306,12 +306,24 @@ function initLocalGame(): void {
 		window.removeEventListener('keyup', keyUpHandler);
 	});
 
-	function resetBall(): void {
+	// Track if it's the first serve (for random direction)
+	let isFirstServe = true;
+
+	function resetBall(direction?: 'left' | 'right'): void {
 		ballX = CANVAS_WIDTH / 2;
 		ballY = CANVAS_HEIGHT / 2;
-		ballVX = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
+		// First serve: random direction. After scoring: ball goes to loser
+		if (direction === 'left') {
+			ballVX = -BALL_SPEED;
+		} else if (direction === 'right') {
+			ballVX = BALL_SPEED;
+		} else {
+			// First serve or no direction specified: random
+			ballVX = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
+		}
 		ballVY = (Math.random() - 0.5) * BALL_SPEED;
 		gameRunning = false;
+		isFirstServe = false;
 	}
 
 	function update(): void {
@@ -350,12 +362,12 @@ function initLocalGame(): void {
 		if (ballX < 0) {
 			score2++;
 			if (score2 >= WINNING_SCORE) winner = 2;
-			else resetBall();
+			else resetBall('left'); // Ball goes to player 1 (left) who just got scored on
 		}
 		if (ballX > CANVAS_WIDTH) {
 			score1++;
 			if (score1 >= WINNING_SCORE) winner = 1;
-			else resetBall();
+			else resetBall('right'); // Ball goes to player 2 (right) who just got scored on
 		}
 	}
 

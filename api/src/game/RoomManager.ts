@@ -34,14 +34,23 @@ class RoomManager {
 
 	/**
 	 * Reset ball to center
+	 * @param direction Optional direction: 'left' sends ball to player1, 'right' to player2
 	 */
-	private resetBall(): Ball {
-		const direction = Math.random() > 0.5 ? 1 : -1;
+	private resetBall(direction?: 'left' | 'right'): Ball {
+		// First serve: random direction. After scoring: ball goes to loser
+		let directionX: number;
+		if (direction === 'left') {
+			directionX = -1;  // Ball goes left (to player1 who just got scored on)
+		} else if (direction === 'right') {
+			directionX = 1;   // Ball goes right (to player2 who just got scored on)
+		} else {
+			directionX = Math.random() > 0.5 ? 1 : -1;  // Random for first serve
+		}
 		const angle = (Math.random() - 0.5) * Math.PI / 4;
 		return {
 			x: CANVAS_WIDTH / 2,
 			y: CANVAS_HEIGHT / 2,
-			vx: BALL_SPEED * direction * Math.cos(angle),
+			vx: BALL_SPEED * directionX * Math.cos(angle),
 			vy: BALL_SPEED * Math.sin(angle),
 		};
 	}
@@ -258,12 +267,12 @@ class RoomManager {
 		if (ball.x < 0) {
 			room.state.score.player2++;
 			this.checkWinner(room);
-			room.state.ball = this.resetBall();
+			room.state.ball = this.resetBall('left');  // Ball goes to player1 (left) who just got scored on
 		}
 		if (ball.x > CANVAS_WIDTH) {
 			room.state.score.player1++;
 			this.checkWinner(room);
-			room.state.ball = this.resetBall();
+			room.state.ball = this.resetBall('right');  // Ball goes to player2 (right) who just got scored on
 		}
 
 		// Broadcast state

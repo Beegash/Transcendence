@@ -55,7 +55,7 @@ export function renderSettingsPage(): void {
           </label>
         </div>
       </div>
-      
+      z
       <!-- Privacy (GDPR) -->
       <div class="card mb-6">
         <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.privacy')}</h2>

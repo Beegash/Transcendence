@@ -277,12 +277,13 @@ export function recordMatch(
  * Sync all user stats from completed matches
  * This recalculates all stats from the matches table
  */
-export function syncAllStats(): { synced: number } {
+export function syncAllStats(): { synced: number; tournamentsUpdated: number } {
 	// First, reset all user stats
 	db.prepare(`
 		UPDATE user_stats SET 
 			total_games = 0, wins = 0, losses = 0, 
 			win_streak = 0, total_points_scored = 0, total_points_conceded = 0,
+			tournaments_played = 0, tournaments_won = 0,
 			updated_at = CURRENT_TIMESTAMP
 	`).run();
 
@@ -310,5 +311,29 @@ export function syncAllStats(): { synced: number } {
 		synced++;
 	}
 
-	return { synced };
+	// Sync tournament stats
+	// Get unique users who participated in completed tournaments
+	const tournamentParticipants = db.prepare(`
+		SELECT tp.user_id, COUNT(DISTINCT tp.tournament_id) as tournaments_played,
+			   SUM(CASE WHEN t.winner_id = tp.user_id THEN 1 ELSE 0 END) as tournaments_won
+		FROM tournament_participants tp
+		JOIN tournaments t ON tp.tournament_id = t.id
+		WHERE t.status = 'completed' AND tp.user_id IS NOT NULL
+		GROUP BY tp.user_id
+	`).all() as Array<{ user_id: number; tournaments_played: number; tournaments_won: number }>;
+
+	let tournamentsUpdated = 0;
+	for (const tp of tournamentParticipants) {
+		// Ensure user_stats row exists
+		db.prepare('INSERT OR IGNORE INTO user_stats (user_id) VALUES (?)').run(tp.user_id);
+
+		db.prepare(`
+			UPDATE user_stats 
+			SET tournaments_played = ?, tournaments_won = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE user_id = ?
+		`).run(tp.tournaments_played, tp.tournaments_won, tp.user_id);
+		tournamentsUpdated++;
+	}
+
+	return { synced, tournamentsUpdated };
 }
