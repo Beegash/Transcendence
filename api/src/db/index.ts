@@ -11,20 +11,31 @@ const db = new Database(process.env.DATABASE_PATH || "/data/app.db");
 db.pragma("journal_mode = WAL");
 db.pragma("busy_timeout = 5000");
 
-export function initDatabase() {
+import { readdirSync } from "fs";
+
+export async function initDatabase() {
     try {
-        const migrationSQL = readFileSync(
-            join(__dirname, "migrations", "0001_init.sql"),
-            "utf-8"
-        );
-        db.exec(migrationSQL);
-        console.log("Database initialized - users table created");
+        const migrationsDir = join(__dirname, "migrations");
+        const files = readdirSync(migrationsDir)
+            .filter(f => f.endsWith(".sql"))
+            .sort();
+
+        for (const file of files) {
+            console.log(`Running migration: ${file}`);
+            const migrationSQL = readFileSync(join(migrationsDir, file), "utf-8");
+            db.exec(migrationSQL);
+        }
+        console.log("Database initialization complete");
     } catch (error) {
         console.error("Database initialization failed:", error);
         throw error;
     }
 }
 
-initDatabase();
+// Call initDatabase and handle potential error
+initDatabase().catch(err => {
+    console.error("Critical: Database initialization failed", err);
+    process.exit(1);
+});
 
 export default db;

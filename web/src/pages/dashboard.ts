@@ -305,7 +305,7 @@ async function loadLeaderboard(): Promise<void> {
       <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 Leaderboard</h2>
       <div class="space-y-2">
         ${leaderboard.map((p, i) => `
-          <div class="flex items-center gap-3 p-2 rounded-lg ${i < 3 ? 'bg-pong-darker' : ''}">
+          <a href="/profile/${p.user_id}" data-link class="flex items-center gap-3 p-2 rounded-lg ${i < 3 ? 'bg-pong-darker' : ''} hover:bg-white/5 transition-colors">
             <span class="font-game text-lg w-8 ${getRankColor(i + 1)}">${getRankDisplay(i + 1)}</span>
             <img src="${p.avatar_url}" alt="" class="w-8 h-8 rounded-full">
             <div class="flex-1">
@@ -313,7 +313,7 @@ async function loadLeaderboard(): Promise<void> {
               <div class="text-white/60 text-xs">${p.wins}W - ${p.losses}L</div>
             </div>
             <span class="font-game text-sm ${p.win_rate >= 50 ? 'text-green-400' : 'text-white/80'}">${p.win_rate}%</span>
-          </div>
+          </a>
         `).join('')}
       </div>
     </div>

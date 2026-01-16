@@ -64,6 +64,15 @@ export function renderGamePage(): void {
 		}
 	}
 
+	if (mode === 'invite') {
+		const roomId = urlParams.get('roomId');
+		if (roomId) {
+			renderNavbar();
+			startInviteGame(content, roomId);
+			return;
+		}
+	}
+
 	renderNavbar();
 	currentMode = 'menu';
 	renderGameMenu(content);
@@ -656,6 +665,7 @@ function showOnlineLobby(content: HTMLElement): void {
 }
 
 function showWaitingRoom(content: HTMLElement, roomId: string): void {
+	console.log('[Game] Showing waiting room for:', roomId);
 	currentMode = 'online-waiting';
 
 	content.innerHTML = `
@@ -707,6 +717,7 @@ function showWaitingRoom(content: HTMLElement, roomId: string): void {
 }
 
 function showReadyScreen(content: HTMLElement, opponentName?: string): void {
+	console.log('[Game] Showing ready screen, opponent:', opponentName);
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
       <h2 class="font-game text-2xl text-pong-primary mb-8">Opponent Joined!</h2>
@@ -752,7 +763,86 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
 	cleanupFunctions.push(unsubGameStart, unsubDisconnect);
 }
 
+function startInviteGame(content: HTMLElement, roomId: string): void {
+	console.log('[Game] Starting invite game for room:', roomId);
+	content.innerHTML = `
+    <div class="max-w-lg mx-auto px-4 py-8 text-center">
+      <h2 class="font-game text-2xl text-pong-primary mb-8">Game Invitation</h2>
+      
+      <div class="card mb-6">
+        <p class="text-white/80 mb-4">Joining private room: <span class="text-pong-secondary">${roomId}</span></p>
+        <div class="loading-spinner mx-auto"></div>
+      </div>
+      
+      <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+    </div>
+  `;
+
+	document.getElementById('cancel-btn')?.addEventListener('click', () => {
+		console.log('[Game] Invite cancelled');
+		cleanup();
+		renderGameMenu(content);
+	});
+
+	// Set up event handlers FIRST before connecting
+	const unsubWildcard = gameSocket.on('*', (data) => {
+		console.log('[Game] Socket received ANY message:', data);
+	});
+
+	const unsubError = gameSocket.on('error', (data) => {
+		console.log('[Game] Socket error:', data);
+		if (data.message === 'Room not found or full') {
+			// Room doesn't exist yet, we must be the inviter. Create it.
+			console.log('[Game] Room not found, creating it...');
+			gameSocket.createRoom(roomId);
+		} else {
+			alert(data.message || 'Game error');
+			cleanup();
+			renderGameMenu(content);
+		}
+	});
+
+	const unsubRoomCreated = gameSocket.on('room_created', (data) => {
+		console.log('[Game] Room created event:', data);
+		if (data.roomId === roomId) {
+			playerNumber = 1;
+			currentRoomId = roomId;
+			showWaitingRoom(content, roomId);
+		}
+	});
+
+	const unsubRoomJoined = gameSocket.on('room_joined', (data) => {
+		console.log('[Game] Room joined event:', data);
+		if (data.roomId === roomId) {
+			playerNumber = 2;
+			currentRoomId = roomId;
+			showReadyScreen(content, (data as { hostUsername?: string }).hostUsername || 'Friend');
+		}
+	});
+
+	cleanupFunctions.push(unsubWildcard, unsubError, unsubRoomCreated, unsubRoomJoined);
+
+	// Now connect
+	console.log('[Game] Connecting to socket...');
+	gameSocket.connect().then(() => {
+		console.log('[Game] Socket connected successfully, isConnected:', gameSocket.isConnected());
+		console.log('[Game] Sending join_room for:', roomId);
+		gameSocket.joinRoom(roomId);
+	}).catch((err) => {
+		console.error('[Game] Connection failed:', err);
+		content.innerHTML = `
+      <div class="max-w-lg mx-auto px-4 py-8 text-center">
+        <h2 class="font-game text-2xl text-red-500 mb-4">Connection Failed</h2>
+        <p class="text-white/80 mb-6">Could not connect to game server.</p>
+        <button id="back-btn" class="btn btn-secondary">Back to Menu</button>
+      </div>
+    `;
+		document.getElementById('back-btn')?.addEventListener('click', () => renderGameMenu(content));
+	});
+}
+
 function startOnlineGame(content: HTMLElement, initialState: GameState): void {
+	console.log('[Game] Starting online game');
 	currentMode = 'online-playing';
 
 	content.innerHTML = `

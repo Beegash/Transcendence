@@ -84,7 +84,9 @@ class GameSocket {
 
 			this.ws.onmessage = (event) => {
 				try {
+					console.log('[GameSocket] Raw message received:', event.data);
 					const data = JSON.parse(event.data) as GameMessage;
+					console.log('[GameSocket] Parsed message:', data.type, data);
 					this.emit(data);
 				} catch (e) {
 					console.error('Failed to parse WebSocket message:', e);
@@ -109,17 +111,18 @@ class GameSocket {
 	 */
 	send(message: object): void {
 		if (this.ws?.readyState === WebSocket.OPEN) {
+			console.log('[GameSocket] Sending message:', message);
 			this.ws.send(JSON.stringify(message));
 		} else {
-			console.error('WebSocket not connected');
+			console.error('[GameSocket] WebSocket not connected, cannot send:', message);
 		}
 	}
 
 	/**
 	 * Create a new game room
 	 */
-	createRoom(): void {
-		this.send({ type: 'create_room' });
+	createRoom(roomId?: string): void {
+		this.send({ type: 'create_room', roomId });
 	}
 
 	/**
@@ -129,11 +132,8 @@ class GameSocket {
 		this.send({ type: 'create_ai_room' });
 	}
 
-	/**
-	 * Join an existing room
-	 */
 	joinRoom(roomId: string): void {
-		this.send({ type: 'join_room', roomId: roomId.toUpperCase() });
+		this.send({ type: 'join_room', roomId: roomId });
 	}
 
 	/**

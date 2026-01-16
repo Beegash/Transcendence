@@ -55,7 +55,7 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 				switch (message.type) {
 					// Create room for human vs human
 					case 'create_room': {
-						const room = roomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username);
+						const room = roomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username, message.roomId);
 						currentRoomId = room.id;
 						ws.send(JSON.stringify({
 							type: 'room_created',

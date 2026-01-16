@@ -13,6 +13,17 @@ interface UpdateProfileBody {
 	username?: string;
 }
 
+interface Notification {
+	id: number;
+	type: 'friend_request' | 'game_invite' | 'system';
+	senderId: number | null;
+	status: 'unread' | 'read';
+	data: string | null;
+	createdAt: string;
+	senderName?: string;
+	senderAvatar?: string;
+}
+
 export default async function userRoutes(fastify: FastifyInstance) {
 	/**
 	 * GET /:id
@@ -316,6 +327,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 			try {
 				db.prepare('INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, ?)').run(userId, friendId, 'pending');
+
+				// Create notification for the friend
+				db.prepare(
+					'INSERT INTO notifications (user_id, type, sender_id, status) VALUES (?, ?, ?, ?)'
+				).run(friendId, 'friend_request', userId, 'unread');
+
 				return reply.status(201).send({ message: 'Friend request sent' });
 			} catch (error) {
 				fastify.log.error(error);
@@ -359,6 +376,12 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			try {
 				if (action === 'accept') {
 					db.prepare('UPDATE friendships SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('accepted', friendship.id);
+
+					// Notify the person who sent the request
+					db.prepare(
+						'INSERT INTO notifications (user_id, type, sender_id, status) VALUES (?, ?, ?, ?)'
+					).run(friendId, 'system', userId, 'unread'); // Using system/accepted type? Let's use 'system' for now or add 'accepted' type
+
 					return reply.send({ message: 'Friend request accepted' });
 				} else {
 					db.prepare('DELETE FROM friendships WHERE id = ?').run(friendship.id);
@@ -417,64 +440,64 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				return reply.status(403).send({ error: 'Unauthorized' });
 			}
 
-		try {
-			const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-			const data = await request.file({ limits: { fileSize: MAX_FILE_SIZE } });
-			if (!data) {
-				return reply.status(400).send({ error: 'No file uploaded' });
+			try {
+				const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+				const data = await request.file({ limits: { fileSize: MAX_FILE_SIZE } });
+				if (!data) {
+					return reply.status(400).send({ error: 'No file uploaded' });
+				}
+
+				// Validate file type (accept both image/jpeg and image/jpg MIME types)
+				const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+				if (!allowedTypes.includes(data.mimetype)) {
+					return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
+				}
+
+				// Read file buffer
+				const buffer = await data.toBuffer();
+
+				// Generate filename - normalize both jpeg and jpg MIME types to .jpg extension
+				let ext = data.mimetype.split('/')[1];
+				if (ext === 'jpeg' || ext === 'jpg') {
+					ext = 'jpg';
+				}
+				const filename = `avatar_${userId}_${Date.now()}.${ext}`;
+
+				// Save to uploads directory
+				const fs = await import('fs/promises');
+				const path = await import('path');
+				const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+
+				// Create directory if not exists
+				await fs.mkdir(uploadsDir, { recursive: true });
+
+				const filePath = path.join(uploadsDir, filename);
+				await fs.writeFile(filePath, buffer);
+
+				// Update database with new avatar URL
+				const avatarUrl = `/uploads/avatars/${filename}`;
+				db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(avatarUrl, userId);
+
+				return reply.send({ message: 'Avatar uploaded successfully', avatarUrl });
+			} catch (error: any) {
+				fastify.log.error(error);
+
+				// Check for file size limit errors
+				if (error.code === 'FST_ERR_REQ_FILE_TOO_LARGE' || error.message?.includes('file too large') || error.message?.includes('File size limit exceeded')) {
+					return reply.status(413).send({
+						error: 'File size too large. Maximum file size is 5MB. Please compress or resize your image.'
+					});
+				}
+
+				// Check for multipart errors
+				if (error.code === 'FST_ERR_BUSY_REQUEST' || error.message?.includes('multipart')) {
+					return reply.status(400).send({
+						error: 'File upload error. Please try again with a smaller file.'
+					});
+				}
+
+				return reply.status(500).send({ error: 'Failed to upload avatar' });
 			}
-
-			// Validate file type (accept both image/jpeg and image/jpg MIME types)
-			const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-			if (!allowedTypes.includes(data.mimetype)) {
-				return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
-			}
-
-			// Read file buffer
-			const buffer = await data.toBuffer();
-
-			// Generate filename - normalize both jpeg and jpg MIME types to .jpg extension
-			let ext = data.mimetype.split('/')[1];
-			if (ext === 'jpeg' || ext === 'jpg') {
-				ext = 'jpg';
-			}
-			const filename = `avatar_${userId}_${Date.now()}.${ext}`;
-
-			// Save to uploads directory
-			const fs = await import('fs/promises');
-			const path = await import('path');
-			const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
-
-			// Create directory if not exists
-			await fs.mkdir(uploadsDir, { recursive: true });
-
-			const filePath = path.join(uploadsDir, filename);
-			await fs.writeFile(filePath, buffer);
-
-			// Update database with new avatar URL
-			const avatarUrl = `/uploads/avatars/${filename}`;
-			db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(avatarUrl, userId);
-
-			return reply.send({ message: 'Avatar uploaded successfully', avatarUrl });
-		} catch (error: any) {
-			fastify.log.error(error);
-			
-			// Check for file size limit errors
-			if (error.code === 'FST_ERR_REQ_FILE_TOO_LARGE' || error.message?.includes('file too large') || error.message?.includes('File size limit exceeded')) {
-				return reply.status(413).send({ 
-					error: 'File size too large. Maximum file size is 5MB. Please compress or resize your image.' 
-				});
-			}
-			
-			// Check for multipart errors
-			if (error.code === 'FST_ERR_BUSY_REQUEST' || error.message?.includes('multipart')) {
-				return reply.status(400).send({ 
-					error: 'File upload error. Please try again with a smaller file.' 
-				});
-			}
-			
-			return reply.status(500).send({ error: 'Failed to upload avatar' });
-		}
 		}
 	);
 
@@ -498,6 +521,162 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			} catch (error) {
 				fastify.log.error(error);
 				return reply.status(500).send({ error: 'Failed to reset avatar' });
+			}
+		}
+	);
+
+	/**
+	 * GET /search
+	 * Search users by username or display name
+	 */
+	fastify.get<{ Querystring: { q: string } }>(
+		'/search',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Querystring: { q: string } }>, reply: FastifyReply) => {
+			const query = request.query.q;
+			if (!query || query.length < 2) {
+				return reply.send({ users: [] });
+			}
+
+			const users = db
+				.prepare(
+					`SELECT id, username, display_name as displayName, avatar_url as avatarUrl, is_online as isOnline
+					 FROM users 
+					 WHERE (username LIKE ? OR display_name LIKE ?) 
+					   AND is_anonymized = FALSE
+					 LIMIT 20`
+				)
+				.all(`%${query}%`, `%${query}%`);
+
+			return reply.send({ users });
+		}
+	);
+
+	/**
+	 * GET /notifications
+	 * Get current user's notifications
+	 */
+	fastify.get(
+		'/notifications',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			const userId = request.user?.userId;
+
+			const notifications = db
+				.prepare(
+					`SELECT n.id, n.type, n.sender_id as senderId, n.status, n.data, n.created_at as createdAt,
+					 u.display_name as senderName, u.avatar_url as senderAvatar
+					 FROM notifications n
+					 LEFT JOIN users u ON n.sender_id = u.id
+					 WHERE n.user_id = ?
+					 ORDER BY n.created_at DESC
+					 LIMIT 50`
+				)
+				.all(userId);
+
+			return reply.send({ notifications });
+		}
+	);
+
+	/**
+	 * PUT /notifications/:id/read
+	 * Mark notification as read
+	 */
+	fastify.put<{ Params: { id: string } }>(
+		'/notifications/:id/read',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+			const userId = request.user?.userId;
+			const notificationId = parseInt(request.params.id, 10);
+
+			const result = db
+				.prepare('UPDATE notifications SET status = ? WHERE id = ? AND user_id = ?')
+				.run('read', notificationId, userId);
+
+			if (result.changes === 0) {
+				return reply.status(404).send({ error: 'Notification not found' });
+			}
+
+			return reply.send({ success: true });
+		}
+	);
+
+	/**
+	 * GET /relationship/:targetId
+	 * Check relationship status between current user and target user
+	 */
+	fastify.get<{ Params: { targetId: string } }>(
+		'/relationship/:targetId',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { targetId: string } }>, reply: FastifyReply) => {
+			const userId = request.user?.userId;
+			const targetId = parseInt(request.params.targetId, 10);
+
+			if (userId === targetId) {
+				return reply.send({ status: 'self' });
+			}
+
+			const friendship = db
+				.prepare(
+					`SELECT user_id, friend_id, status 
+					 FROM friendships 
+					 WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`
+				)
+				.get(userId, targetId, targetId, userId) as { user_id: number; friend_id: number; status: string } | undefined;
+
+			if (!friendship) {
+				return reply.send({ status: 'none' });
+			}
+
+			if (friendship.status === 'accepted') {
+				return reply.send({ status: 'friends' });
+			}
+
+			if (friendship.status === 'pending') {
+				if (friendship.user_id === userId) {
+					return reply.send({ status: 'request_sent' });
+				} else {
+					return reply.send({ status: 'request_received' });
+				}
+			}
+
+			return reply.send({ status: friendship.status });
+		}
+	);
+
+	/**
+	 * POST /invite/:targetId
+	 * Send a game invitation to a friend
+	 */
+	fastify.post<{ Params: { targetId: string } }>(
+		'/invite/:targetId',
+		{ preHandler: authMiddleware },
+		async (request: FastifyRequest<{ Params: { targetId: string } }>, reply: FastifyReply) => {
+			const userId = request.user?.userId;
+			const targetId = parseInt(request.params.targetId, 10);
+
+			// Verify they are friends
+			const friendship = db
+				.prepare(
+					'SELECT status FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)'
+				)
+				.get(userId, targetId, targetId, userId) as { status: string } | undefined;
+
+			if (!friendship || friendship.status !== 'accepted') {
+				return reply.code(403).send({ error: 'You must be friends to send game invites' });
+			}
+
+			// Generate a unique room ID
+			const roomId = `invite_${Math.random().toString(36).substring(2, 10)}`;
+
+			try {
+				db.prepare(
+					'INSERT INTO notifications (user_id, type, sender_id, status, data) VALUES (?, ?, ?, ?, ?)'
+				).run(targetId, 'game_invite', userId, 'unread', roomId);
+
+				return reply.send({ success: true, roomId });
+			} catch (err) {
+				return reply.code(500).send({ error: 'Failed to send invitation' });
 			}
 		}
 	);

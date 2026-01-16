@@ -104,9 +104,9 @@ export async function renderProfilePage(): Promise<void> {
               ${t('profile.editProfile')}
             </a>
           ` : `
-            <button id="add-friend-btn" class="btn btn-primary" data-user-id="${user.id}">
-              ${t('profile.addFriend')}
-            </button>
+            <div id="friendship-action-container">
+              <div class="loading-spinner w-6 h-6"></div>
+            </div>
           `}
         </div>
       </div>
@@ -161,8 +161,22 @@ export async function renderProfilePage(): Promise<void> {
     loadFriendsList(user.id);
     setupAvatarUpload(user.id);
   } else {
-    setupAddFriendButton(user.id);
+    setupRelationshipButton(user.id);
   }
+}
+
+async function setupRelationshipButton(targetUserId: number): Promise<void> {
+  const container = document.getElementById('friendship-action-container');
+  if (!container) return;
+
+  const result = await api.get<{ status: string }>(`/users/relationship/${targetUserId}`);
+  if (!result.success || !result.data) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const status = result.data.status;
+  renderRelationshipButton(container, status, targetUserId);
 }
 
 // Setup avatar upload functionality
@@ -211,12 +225,33 @@ function setupAvatarUpload(userId: number): void {
   }
 }
 
-// Setup add friend button
-function setupAddFriendButton(targetUserId: number): void {
-  const addFriendBtn = document.getElementById('add-friend-btn');
-  if (!addFriendBtn) return;
+function renderRelationshipButton(container: HTMLElement, status: string, targetUserId: number): void {
+  let buttonHtml = '';
 
-  addFriendBtn.addEventListener('click', async () => {
+  switch (status) {
+    case 'none':
+      buttonHtml = `<button id="relationship-btn" class="btn btn-primary">${t('profile.addFriend')}</button>`;
+      break;
+    case 'request_sent':
+      buttonHtml = `<button id="relationship-btn" class="btn btn-secondary opacity-50 cursor-default" disabled>${t('profile.friendRequestPending')}</button>`;
+      break;
+    case 'request_received':
+      buttonHtml = `<button id="relationship-btn" class="btn btn-primary animate-pulse">${t('notifications.accept')}</button>`;
+      break;
+    case 'friends':
+      buttonHtml = `<button id="relationship-btn" class="btn btn-secondary">${t('profile.friends') || 'Friends'}</button>`;
+      break;
+    default:
+      container.innerHTML = '';
+      return;
+  }
+
+  container.innerHTML = buttonHtml;
+
+  const btn = document.getElementById('relationship-btn');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
     const currentUser = auth.getUser();
     if (!currentUser) {
       router.navigate('/login');
@@ -224,18 +259,17 @@ function setupAddFriendButton(targetUserId: number): void {
     }
 
     try {
-      const result = await api.post(`/users/${currentUser.id}/friends`, { friendId: targetUserId });
-      if (result.success) {
-        addFriendBtn.textContent = t('profile.friendRequestPending') || 'Request Sent';
-        addFriendBtn.classList.remove('btn-primary');
-        addFriendBtn.classList.add('btn-secondary', 'opacity-50');
-        (addFriendBtn as HTMLButtonElement).disabled = true;
-      } else {
-        alert(result.error || 'Failed to send friend request');
+      if (status === 'none') {
+        const res = await api.post(`/users/${currentUser.id}/friends`, { friendId: targetUserId });
+        if (res.success) setupRelationshipButton(targetUserId);
+        else alert(res.error || 'Failed to send request');
+      } else if (status === 'request_received') {
+        const res = await api.put(`/users/${currentUser.id}/friends/${targetUserId}`, { action: 'accept' });
+        if (res.success) setupRelationshipButton(targetUserId);
+        else alert(res.error || 'Failed to accept request');
       }
     } catch (err) {
-      console.error('Add friend error:', err);
-      alert('Failed to send friend request');
+      console.error('Friendship action error:', err);
     }
   });
 }
