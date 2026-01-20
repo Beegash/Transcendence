@@ -239,7 +239,14 @@ function renderRelationshipButton(container: HTMLElement, status: string, target
       buttonHtml = `<button id="relationship-btn" class="btn btn-primary animate-pulse">${t('notifications.accept')}</button>`;
       break;
     case 'friends':
-      buttonHtml = `<button id="relationship-btn" class="btn btn-secondary">${t('profile.friends') || 'Friends'}</button>`;
+      buttonHtml = `
+        <div class="relative group">
+          <button id="relationship-btn" class="btn btn-secondary">${t('profile.friends') || 'Friends'}</button>
+          <div class="absolute right-0 top-full mt-1 w-40 bg-pong-dark border border-pong-light rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+            <button id="remove-friend-btn" class="w-full text-left px-4 py-2 text-red-400 hover:bg-pong-light/50 rounded-lg">Remove Friend</button>
+          </div>
+        </div>
+      `;
       break;
     default:
       container.innerHTML = '';
@@ -272,6 +279,26 @@ function renderRelationshipButton(container: HTMLElement, status: string, target
       console.error('Friendship action error:', err);
     }
   });
+
+  // Add remove friend listener if friends
+  if (status === 'friends') {
+    const removeBtn = document.getElementById('remove-friend-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', async () => {
+        const currentUser = auth.getUser();
+        if (!currentUser) return;
+
+        if (confirm('Are you sure you want to remove this friend?')) {
+          const res = await api.delete(`/users/${currentUser.id}/friends/${targetUserId}`);
+          if (res.success) {
+            setupRelationshipButton(targetUserId);
+          } else {
+            alert(res.error || 'Failed to remove friend');
+          }
+        }
+      });
+    }
+  }
 }
 
 // Load friends list
@@ -329,18 +356,22 @@ async function loadMatchHistory(userId: number): Promise<void> {
   }
 
   const matchesHtml = result.data.matches.map((match) => {
-    const isPlayer1 = match.player1_id === match.player1_id; // simplified
-    const won = match.winner_id === (isPlayer1 ? match.player1_id : match.player2_id);
-    const opponentName = isPlayer1 ? match.player2_display_name || match.player2_username : match.player1_display_name || match.player1_username;
+    const isPlayer1 = match.player1_id === userId;
+    const won = match.winner_id === userId;
+    const opponentName = isPlayer1
+      ? (match.player2_display_name || match.player2_username || 'Unknown')
+      : (match.player1_display_name || match.player1_username || 'Unknown');
+    const myScore = isPlayer1 ? match.player1_score : match.player2_score;
+    const oppScore = isPlayer1 ? match.player2_score : match.player1_score;
 
     return `
       <div class="flex items-center justify-between py-3 border-b border-pong-light last:border-0">
         <div class="flex items-center gap-4">
           <span class="${won ? 'text-green-400' : 'text-red-400'} font-bold">${won ? 'WIN' : 'LOSS'}</span>
-          <span>vs ${opponentName || 'Unknown'}</span>
+          <span>vs ${opponentName}</span>
         </div>
         <div class="text-right">
-          <div class="font-game">${match.player1_score} - ${match.player2_score}</div>
+          <div class="font-game">${myScore} - ${oppScore}</div>
           <div class="text-white/60 text-sm">${match.match_type}</div>
         </div>
       </div>

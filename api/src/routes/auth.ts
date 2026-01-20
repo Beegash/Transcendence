@@ -108,13 +108,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
 			// Find user
 			const user = db
-				.prepare('SELECT id, email, username, display_name, password_hash FROM users WHERE email = ?')
+				.prepare('SELECT id, email, username, display_name, password_hash, avatar_url FROM users WHERE email = ?')
 				.get(email.toLowerCase()) as {
 					id: number;
 					email: string;
 					username: string;
 					display_name: string;
 					password_hash: string | null;
+					avatar_url: string;
 				} | undefined;
 
 			if (!user) {
@@ -160,6 +161,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 					email: user.email,
 					username: user.username,
 					displayName: user.display_name,
+					avatarUrl: user.avatar_url,
 				},
 				token, // Also send token in response for flexibility
 			});

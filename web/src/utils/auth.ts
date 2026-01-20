@@ -152,8 +152,12 @@ class AuthStore {
 			return true;
 		}
 
-		// Token invalid, clear auth
-		this.logout();
+		// Token invalid, clear auth state silently (don't redirect)
+		this.state.user = null;
+		this.state.token = null;
+		this.state.isAuthenticated = false;
+		this.clearStorage();
+		this.notifyListeners();
 		return false;
 	}
 
