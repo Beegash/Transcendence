@@ -11,6 +11,8 @@ import {
 	PADDLE_WIDTH,
 	BALL_SIZE,
 	BALL_SPEED,
+	BALL_SPEED_INCREMENT,
+	BALL_MAX_SPEED,
 	WINNING_SCORE,
 	AI_REFRESH_INTERVAL,
 } from './constants.js';
@@ -268,10 +270,24 @@ class RoomManager {
 			ball.y + BALL_SIZE >= p1Paddle &&
 			ball.y <= p1Paddle + PADDLE_HEIGHT
 		) {
-			ball.vx = Math.abs(ball.vx);
-			ball.x = PADDLE_WIDTH + BALL_SIZE;
+			// Calculate current speed
+			const currentSpeed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+
+			// Calculate hit position for angle adjustment (-0.5 to 0.5)
 			const hitPos = (ball.y - p1Paddle) / PADDLE_HEIGHT - 0.5;
-			ball.vy += hitPos * 3;
+
+			// Always increase speed - NO CAP!
+			const newSpeed = currentSpeed + BALL_SPEED_INCREMENT;
+
+			// Preserve current angle and add subtle variation based on hit position
+			const currentAngle = Math.atan2(ball.vy, Math.abs(ball.vx));
+			const angleAdjustment = hitPos * 0.6;
+			const newAngle = currentAngle + angleAdjustment;
+
+			// Apply new velocity (going right)
+			ball.vx = newSpeed * Math.cos(newAngle);
+			ball.vy = newSpeed * Math.sin(newAngle);
+			ball.x = PADDLE_WIDTH + BALL_SIZE;
 		}
 
 		// Paddle 2 collision (right)
@@ -280,11 +296,26 @@ class RoomManager {
 			ball.y + BALL_SIZE >= p2Paddle &&
 			ball.y <= p2Paddle + PADDLE_HEIGHT
 		) {
-			ball.vx = -Math.abs(ball.vx);
-			ball.x = CANVAS_WIDTH - PADDLE_WIDTH - BALL_SIZE;
+			// Calculate current speed
+			const currentSpeed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+
+			// Calculate hit position for angle adjustment (-0.5 to 0.5)
 			const hitPos = (ball.y - p2Paddle) / PADDLE_HEIGHT - 0.5;
-			ball.vy += hitPos * 3;
+
+			// Always increase speed - NO CAP!
+			const newSpeed = currentSpeed + BALL_SPEED_INCREMENT;
+
+			// Preserve current angle and add subtle variation based on hit position
+			const currentAngle = Math.atan2(ball.vy, Math.abs(ball.vx));
+			const angleAdjustment = hitPos * 0.6;
+			const newAngle = currentAngle + angleAdjustment;
+
+			// Apply new velocity (going left)
+			ball.vx = -newSpeed * Math.cos(newAngle);
+			ball.vy = newSpeed * Math.sin(newAngle);
+			ball.x = CANVAS_WIDTH - PADDLE_WIDTH - BALL_SIZE;
 		}
+
 
 		// Scoring
 		if (ball.x < 0) {

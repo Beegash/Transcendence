@@ -208,6 +208,7 @@ const en: Translations = {
 		search: 'Search',
 		noResults: 'No results found',
 		back: 'Back',
+		madeBy: 'Made by',
 	},
 	dashboard: {
 		title: 'Dashboard',
@@ -431,6 +432,7 @@ const tr: Translations = {
 		search: 'Ara',
 		noResults: 'Sonuç bulunamadı',
 		back: 'Geri',
+		madeBy: 'Yapımcılar',
 	},
 	dashboard: {
 		title: 'Panel',
@@ -654,6 +656,7 @@ const de: Translations = {
 		search: 'Suchen',
 		noResults: 'Keine Ergebnisse gefunden',
 		back: 'Zurück',
+		madeBy: 'Erstellt von',
 	},
 	dashboard: {
 		title: 'Dashboard',

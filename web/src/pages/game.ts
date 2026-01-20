@@ -12,11 +12,13 @@ import api from '../utils/api';
 // Game constants
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 400;
-const PADDLE_HEIGHT = 80;
+const PADDLE_HEIGHT = 60; // Reduced from 80
 const PADDLE_WIDTH = 10;
 const BALL_SIZE = 10;
 const PADDLE_SPEED = 8;
-const BALL_SPEED = 5;
+const BALL_SPEED = 7; // Increased from 5
+const BALL_SPEED_INCREMENT = 0.3;
+const BALL_MAX_SPEED = 15; // Kept as cap for now, but client loop will ignore if desired
 const WINNING_SCORE = 5;
 
 type GameMode = 'menu' | 'local' | 'online-lobby' | 'online-waiting' | 'online-playing' | 'online-tournament';
@@ -420,16 +422,46 @@ function initLocalGame(): void {
 
 		// Paddle 1 collision
 		if (ballX <= PADDLE_WIDTH + BALL_SIZE && ballY + BALL_SIZE >= paddle1Y && ballY <= paddle1Y + PADDLE_HEIGHT) {
-			ballVX = Math.abs(ballVX);
+			// Calculate current speed
+			const currentSpeed = Math.sqrt(ballVX * ballVX + ballVY * ballVY);
+
+			// Calculate hit position for angle adjustment (-0.5 to 0.5)
 			const hitPos = (ballY - paddle1Y) / PADDLE_HEIGHT - 0.5;
-			ballVY += hitPos * 3;
+
+			// Always increase speed - NO CAP!
+			const newSpeed = currentSpeed + BALL_SPEED_INCREMENT;
+
+			// Preserve current angle and add subtle variation based on hit position
+			const currentAngle = Math.atan2(ballVY, Math.abs(ballVX));
+			const angleAdjustment = hitPos * 0.6;
+			const newAngle = currentAngle + angleAdjustment;
+
+			// Apply new velocity (going right)
+			ballVX = newSpeed * Math.cos(newAngle);
+			ballVY = newSpeed * Math.sin(newAngle);
+			ballX = PADDLE_WIDTH + BALL_SIZE;
 		}
 
 		// Paddle 2 collision
 		if (ballX >= CANVAS_WIDTH - PADDLE_WIDTH - BALL_SIZE && ballY + BALL_SIZE >= paddle2Y && ballY <= paddle2Y + PADDLE_HEIGHT) {
-			ballVX = -Math.abs(ballVX);
+			// Calculate current speed
+			const currentSpeed = Math.sqrt(ballVX * ballVX + ballVY * ballVY);
+
+			// Calculate hit position for angle adjustment (-0.5 to 0.5)
 			const hitPos = (ballY - paddle2Y) / PADDLE_HEIGHT - 0.5;
-			ballVY += hitPos * 3;
+
+			// Always increase speed - NO CAP!
+			const newSpeed = currentSpeed + BALL_SPEED_INCREMENT;
+
+			// Preserve current angle and add subtle variation based on hit position
+			const currentAngle = Math.atan2(ballVY, Math.abs(ballVX));
+			const angleAdjustment = hitPos * 0.6;
+			const newAngle = currentAngle + angleAdjustment;
+
+			// Apply new velocity (going left)
+			ballVX = -newSpeed * Math.cos(newAngle);
+			ballVY = newSpeed * Math.sin(newAngle);
+			ballX = CANVAS_WIDTH - PADDLE_WIDTH - BALL_SIZE;
 		}
 
 		// Scoring

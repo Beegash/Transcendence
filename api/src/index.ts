@@ -24,7 +24,7 @@ await app.register(import("@fastify/cors"), {
   credentials: true,
 });
 await app.register(import("@fastify/rate-limit"), {
-  max: 100,
+  max: 500,
   timeWindow: '1 minute'
 });
 await app.register(fastifyCookie, {
