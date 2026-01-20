@@ -1149,9 +1149,9 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
       </div>
       
       <div class="flex justify-between items-center mt-6">
-          <div class="font-game text-xl"><span class="${playerNumber === 1 ? 'text-green-400' : 'text-blue-400'}">YOU</span>: Player ${playerNumber} (${playerNumber === 1 ? 'Green' : 'Blue'})</div>
-          <div class="text-white/60">First to ${WINNING_SCORE} wins</div>
-          <div class="text-pong-secondary font-game text-xl">OPPONENT</div>
+          <div class="font-game text-xl"><span class="${playerNumber === 1 ? 'text-red-400' : 'text-blue-400'}">${t('game.you')}</span>: ${t('game.player')} ${playerNumber} (${playerNumber === 1 ? t('game.red') : t('game.blue')})</div>
+          <div class="text-white/60">${t('game.firstToWins', { score: WINNING_SCORE.toString() })}</div>
+          <div class="text-pong-secondary font-game text-xl">${t('game.opponent')}</div>
       </div>
       
       <p class="text-center text-white/60 text-sm mt-4">
@@ -1172,6 +1172,10 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 
 	const keyDownHandler = (e: KeyboardEvent) => {
 		keys[e.key.toLowerCase()] = true;
+		// Resume ball when space is pressed and ball is paused
+		if (e.key === ' ' && gameState.ballPaused) {
+			gameSocket.resumeBall();
+		}
 		if (gameState.status === 'finished' && (e.key === ' ' || e.key === 'Enter')) {
 			navigateToTournament();
 		}
@@ -1179,6 +1183,10 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 	const keyUpHandler = (e: KeyboardEvent) => keys[e.key.toLowerCase()] = false;
 
 	canvas.addEventListener('click', () => {
+		// Resume ball on click if paused
+		if (gameState.ballPaused) {
+			gameSocket.resumeBall();
+		}
 		if (gameState.status === 'finished') {
 			navigateToTournament();
 		}

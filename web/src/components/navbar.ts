@@ -430,14 +430,26 @@ function getNotificationText(n: any): string {
 }
 
 function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
+  // SQLite returns UTC timestamps without timezone info (e.g., "2024-01-20 12:00:00")
+  // We need to explicitly treat it as UTC by appending 'Z' or converting to ISO format
+  let date: Date;
+  
+  // If dateStr doesn't have timezone info, append 'Z' to treat it as UTC
+  if (dateStr && !dateStr.includes('Z') && !dateStr.includes('+')) {
+    // Convert SQLite format to ISO: "2024-01-20 12:00:00" -> "2024-01-20T12:00:00Z"
+    const isoDate = dateStr.replace(' ', 'T') + 'Z';
+    date = new Date(isoDate);
+  } else {
+    date = new Date(dateStr);
+  }
+  
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (diffInSeconds < 60) return 'just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  if (diffInSeconds < 60) return t('time.justNow');
+  if (diffInSeconds < 3600) return t('time.minutesAgo', { count: Math.floor(diffInSeconds / 60).toString() });
+  if (diffInSeconds < 86400) return t('time.hoursAgo', { count: Math.floor(diffInSeconds / 3600).toString() });
+  return t('time.daysAgo', { count: Math.floor(diffInSeconds / 86400).toString() });
 }
 
 async function handleFriendAction(e: Event, action: 'accept' | 'reject'): Promise<void> {

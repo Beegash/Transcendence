@@ -1,9 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 # Generate self-signed SSL certificate for development
-# This script creates a certificate valid for localhost
+# This script creates a certificate valid for localhost.
+# CERT_DIR can be overridden from the environment (useful in Docker builds).
 
-CERT_DIR="$(dirname "$0")/certs"
+# Default to "./certs" next to this script if CERT_DIR is not set
+CERT_DIR="${CERT_DIR:-$(dirname "$0")/certs}"
 mkdir -p "$CERT_DIR"
 
 # Generate private key and certificate

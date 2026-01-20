@@ -269,7 +269,7 @@ async function loadMatchHistory(): Promise<void> {
             <div class="flex items-center gap-3">
               <span class="text-lg ${m.won ? 'text-green-400' : 'text-red-400'}">${m.won ? 'W' : 'L'}</span>
               <span class="text-white">vs ${m.opponent_name}</span>
-              <span class="badge text-xs ${getMatchTypeBadge(m.match_type)}">${m.match_type}</span>
+              <span class="badge text-xs ${getMatchTypeBadge(m.match_type)}">${getMatchTypeLabel(m.match_type)}</span>
             </div>
             <div class="text-right">
               <span class="font-game text-lg">${m.player_score} - ${m.opponent_score}</span>
@@ -291,8 +291,8 @@ async function loadLeaderboard(): Promise<void> {
   if (!result.success || !result.data?.leaderboard.length) {
     container.innerHTML = `
       <div class="card">
-        <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 Leaderboard</h2>
-        <p class="text-white/60 text-center py-4">No players yet</p>
+        <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 ${t('dashboard.leaderboard')}</h2>
+        <p class="text-white/60 text-center py-4">${t('dashboard.noPlayers')}</p>
       </div>
     `;
     return;
@@ -302,7 +302,7 @@ async function loadLeaderboard(): Promise<void> {
 
   container.innerHTML = `
     <div class="card">
-      <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 Leaderboard</h2>
+      <h2 class="font-game text-xl text-yellow-500 mb-4">🏆 ${t('dashboard.leaderboard')}</h2>
       <div class="space-y-2">
         ${leaderboard.map((p, i) => `
           <a href="/profile/${p.user_id}" data-link class="flex items-center gap-3 p-2 rounded-lg ${i < 3 ? 'bg-pong-darker' : ''} hover:bg-white/5 transition-colors">
@@ -325,12 +325,26 @@ function getMatchTypeBadge(type: string): string {
     case 'tournament': return 'bg-yellow-500/20 text-yellow-400';
     case 'ai': return 'bg-purple-500/20 text-purple-400';
     case 'casual': return 'bg-blue-500/20 text-blue-400';
+    case 'local': return 'bg-green-500/20 text-green-400';
+    case 'online': return 'bg-cyan-500/20 text-cyan-400';
     default: return 'bg-gray-500/20 text-white/80';
   }
 }
 
+function getMatchTypeLabel(type: string): string {
+  return t(`dashboard.matchTypes.${type}`) || type;
+}
+
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  // SQLite returns UTC timestamps without timezone info
+  // Convert to ISO format if needed
+  let date: Date;
+  if (dateStr && !dateStr.includes('Z') && !dateStr.includes('+')) {
+    const isoDate = dateStr.replace(' ', 'T') + 'Z';
+    date = new Date(isoDate);
+  } else {
+    date = new Date(dateStr);
+  }
   return date.toLocaleDateString();
 }
 

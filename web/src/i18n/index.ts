@@ -77,6 +77,7 @@ const en: Translations = {
 		player: 'Player',
 		opponent: 'OPPONENT',
 		red: 'Red',
+		blue: 'Blue',
 		navy: 'Navy',
 		firstToWins: 'First to {score} wins',
 		useArrows: 'Use ↑/↓ or W/S to move your paddle',
@@ -210,6 +211,12 @@ const en: Translations = {
 		back: 'Back',
 		madeBy: 'Made by',
 	},
+	time: {
+		justNow: 'just now',
+		minutesAgo: '{count}m ago',
+		hoursAgo: '{count}h ago',
+		daysAgo: '{count}d ago',
+	},
 	dashboard: {
 		title: 'Dashboard',
 		players: 'Players',
@@ -229,6 +236,14 @@ const en: Translations = {
 		recentMatches: 'Recent Matches',
 		leaderboard: 'Leaderboard',
 		loadingStats: 'Loading stats...',
+		noPlayers: 'No players yet',
+		matchTypes: {
+			tournament: 'Tournament',
+			casual: 'Casual',
+			ai: 'vs AI',
+			local: 'Local',
+			online: 'Online',
+		},
 	},
 };
 
@@ -301,6 +316,7 @@ const tr: Translations = {
 		player: 'Oyuncu',
 		opponent: 'RAKİP',
 		red: 'Kırmızı',
+		blue: 'Mavi',
 		navy: 'Lacivert',
 		firstToWins: 'İlk {score} sayı kazanır',
 		useArrows: 'Hareket: ↑/↓ veya W/S',
@@ -434,6 +450,12 @@ const tr: Translations = {
 		back: 'Geri',
 		madeBy: 'Yapımcılar',
 	},
+	time: {
+		justNow: 'şimdi',
+		minutesAgo: '{count} dk önce',
+		hoursAgo: '{count} sa önce',
+		daysAgo: '{count} gün önce',
+	},
 	dashboard: {
 		title: 'Panel',
 		players: 'Oyuncular',
@@ -453,6 +475,14 @@ const tr: Translations = {
 		recentMatches: 'Son Maçlar',
 		leaderboard: 'Liderlik Tablosu',
 		loadingStats: 'İstatistikler yükleniyor...',
+		noPlayers: 'Henüz oyuncu yok',
+		matchTypes: {
+			tournament: 'Turnuva',
+			casual: 'Normal',
+			ai: 'Yapay Zeka',
+			local: 'Yerel',
+			online: 'Çevrimiçi',
+		},
 	},
 };
 
@@ -525,6 +555,7 @@ const de: Translations = {
 		player: 'Spieler',
 		opponent: 'GEGNER',
 		red: 'Rot',
+		blue: 'Blau',
 		navy: 'Blau',
 		firstToWins: 'Erster mit {score} gewinnt',
 		useArrows: 'Benutze ↑/↓ oder W/S um dein Paddel zu bewegen',
@@ -658,6 +689,12 @@ const de: Translations = {
 		back: 'Zurück',
 		madeBy: 'Erstellt von',
 	},
+	time: {
+		justNow: 'gerade eben',
+		minutesAgo: 'vor {count} Min',
+		hoursAgo: 'vor {count} Std',
+		daysAgo: 'vor {count} Tag(en)',
+	},
 	dashboard: {
 		title: 'Dashboard',
 		players: 'Spieler',
@@ -677,6 +714,14 @@ const de: Translations = {
 		recentMatches: 'Letzte Spiele',
 		leaderboard: 'Bestenliste',
 		loadingStats: 'Statistiken werden geladen...',
+		noPlayers: 'Noch keine Spieler',
+		matchTypes: {
+			tournament: 'Turnier',
+			casual: 'Freundschaftsspiel',
+			ai: 'vs KI',
+			local: 'Lokal',
+			online: 'Online',
+		},
 	},
 };
 
