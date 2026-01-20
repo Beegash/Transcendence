@@ -220,7 +220,7 @@ function showAIReadyScreen(content: HTMLElement): void {
       
       <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready!</button>
       
-      <p class="text-white/50 text-sm mt-6">You are Player 1 (Left - Red)</p>
+      <p class="text-white/50 text-sm mt-6">${t('game.you')}: ${t('game.player')} 1 (${t('game.red')})</p>
     </div>
   `;
 
@@ -492,7 +492,7 @@ function initLocalGame(): void {
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// Paddles - Red (P1) and Navy (P2)
+		// Paddles - Red (P1) and Blue (P2)
 		ctx.fillStyle = '#C0392B';
 		ctx.fillRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT);
 		ctx.fillStyle = '#3498DB';
@@ -763,7 +763,7 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
       
       <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready!</button>
       
-      <p class="text-white/50 text-sm mt-6">You are Player ${playerNumber} (${playerNumber === 1 ? 'Left - Red' : 'Right - Navy'})</p>
+      <p class="text-white/50 text-sm mt-6">${t('game.you')}: ${t('game.player')} ${playerNumber} (${playerNumber === 1 ? t('game.red') : t('game.blue')})</p>
     </div>
   `;
 
@@ -881,7 +881,7 @@ function startOnlineGame(content: HTMLElement, initialState: GameState): void {
     <div class="max-w-4xl mx-auto px-4 py-8">
       <div class="flex items-center justify-between mb-4">
         <span class="badge ${playerNumber === 1 ? 'badge-online' : 'badge-offline'}">
-          You: Player ${playerNumber} (${playerNumber === 1 ? 'Left - Red' : 'Right - Navy'})
+          ${t('game.you')}: ${t('game.player')} ${playerNumber} (${playerNumber === 1 ? t('game.red') : t('game.blue')})
         </span>
         <span class="text-white/60 text-sm">Room: ${currentRoomId}</span>
       </div>
@@ -1031,7 +1031,7 @@ function initOnlineGame(initialState: GameState): void {
 
 		ctx.fillStyle = '#C0392B'; // P1 color - Red
 		ctx.fillRect(p1X, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
-		ctx.fillStyle = '#3498DB'; // P2 color - Navy
+		ctx.fillStyle = '#3498DB'; // P2 color - Blue
 		ctx.fillRect(p2X, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
 
 		// Ball - Orange Circle
@@ -1296,13 +1296,13 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// Paddles - Red (P1) and Navy (P2)
+		// Paddles - Red (P1) and Blue (P2)
 		const p1X = flipX(0, PADDLE_WIDTH);
 		const p2X = flipX(CANVAS_WIDTH - PADDLE_WIDTH, PADDLE_WIDTH);
 
 		ctx.fillStyle = '#C0392B'; // P1 color - Red
 		ctx.fillRect(p1X, gameState.paddles.player1, PADDLE_WIDTH, PADDLE_HEIGHT);
-		ctx.fillStyle = '#3498DB'; // P2 color - Navy
+		ctx.fillStyle = '#3498DB'; // P2 color - Blue
 		ctx.fillRect(p2X, gameState.paddles.player2, PADDLE_WIDTH, PADDLE_HEIGHT);
 
 		// Ball - Orange Circle

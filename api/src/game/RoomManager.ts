@@ -18,6 +18,7 @@ import {
 } from './constants.js';
 import type { Ball, Player, GameRoom, GameState, ClientGameState } from './types.js';
 import { aiPlayer } from './AIPlayer.js';
+import { recordMatch } from '../services/stats.js';
 
 class RoomManager {
 	private rooms: Map<string, GameRoom> = new Map();
@@ -367,6 +368,35 @@ class RoomManager {
 		if (room.aiLoop) {
 			clearInterval(room.aiLoop);
 			room.aiLoop = null;
+		}
+
+		// Record match result in database
+		try {
+			const player1Id = room.player1?.userId || null;
+			const player2Id = room.player2?.userId || null;
+			const player1Score = room.state.score.player1;
+			const player2Score = room.state.score.player2;
+			const player1Alias = room.player1?.username;
+			const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
+			
+			// Determine match type
+			const matchType = room.isVsAI ? 'ai' : 'casual';
+			
+			// Only record if at least one player is a real user
+			if (player1Id || player2Id) {
+				recordMatch(
+					player1Id,
+					player2Id,
+					player1Score,
+					player2Score,
+					matchType,
+					player1Alias,
+					player2Alias
+				);
+				console.log(`Match recorded: P1(${player1Id}) ${player1Score} - ${player2Score} P2(${player2Id}) [${matchType}]`);
+			}
+		} catch (error) {
+			console.error('Failed to record match:', error);
 		}
 
 		this.broadcast(room, {

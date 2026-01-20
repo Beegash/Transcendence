@@ -16,8 +16,6 @@ interface UserStats {
   wins: number;
   losses: number;
   win_rate: number;
-  win_streak: number;
-  best_win_streak: number;
   total_points_scored: number;
   total_points_conceded: number;
   tournaments_played: number;
@@ -195,8 +193,30 @@ async function loadUserStats(): Promise<void> {
         </div>
       </div>
       
+      <!-- Wins vs Losses Pie Chart -->
+      <div class="mb-6 p-4 bg-pong-darker rounded-lg">
+        <h3 class="text-sm text-white/70 mb-4 text-center">${t('dashboard.winsVsLosses') || 'Wins vs Losses'}</h3>
+        <div class="flex items-center justify-center gap-8">
+          <!-- Pie Chart SVG -->
+          <div class="relative w-32 h-32">
+            ${renderPieChart(stats.wins, stats.losses)}
+          </div>
+          <!-- Legend -->
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded-full bg-green-400"></div>
+              <span class="text-white text-sm">${t('dashboard.wins')}: <span class="font-game">${stats.wins}</span></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded-full bg-red-400"></div>
+              <span class="text-white text-sm">${t('dashboard.losses')}: <span class="font-game">${stats.losses}</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Stats Grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-3 gap-4">
         <div class="text-center p-3 bg-pong-darker rounded-lg">
           <div class="text-2xl font-game text-white">${stats.total_games}</div>
           <div class="text-white/60 text-xs">${t('dashboard.games')}</div>
@@ -209,18 +229,10 @@ async function loadUserStats(): Promise<void> {
           <div class="text-2xl font-game text-red-400">${stats.losses}</div>
           <div class="text-white/60 text-xs">${t('dashboard.losses')}</div>
         </div>
-        <div class="text-center p-3 bg-pong-darker rounded-lg">
-          <div class="text-2xl font-game text-yellow-400">${stats.win_streak}</div>
-          <div class="text-white/60 text-xs">${t('dashboard.streak')}</div>
-        </div>
       </div>
       
       <!-- Additional Stats -->
       <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-        <div class="flex justify-between text-white/70">
-          <span>${t('dashboard.bestStreak')}:</span>
-          <span class="text-white">${stats.best_win_streak}</span>
-        </div>
         <div class="flex justify-between text-white/70">
           <span>${t('dashboard.pointsScored')}:</span>
           <span class="text-white">${stats.total_points_scored}</span>
@@ -364,4 +376,108 @@ function getRankDisplay(rank: number): string {
     case 3: return '🥉';
     default: return `#${rank}`;
   }
+}
+
+/**
+ * Render a pie chart using SVG
+ */
+function renderPieChart(wins: number, losses: number): string {
+  const total = wins + losses;
+  
+  // No data case
+  if (total === 0) {
+    return `
+      <svg viewBox="0 0 200 200" class="w-full h-full">
+        <circle cx="100" cy="100" r="80" fill="#374151" />
+        <circle cx="100" cy="100" r="50" fill="#0f172a" />
+        <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="fill-white/60" style="font-size: 14px;">No data</text>
+      </svg>
+    `;
+  }
+  
+  // All wins - full green circle
+  if (losses === 0) {
+    return `
+      <svg viewBox="0 0 200 200" class="w-full h-full">
+        <circle cx="100" cy="100" r="80" fill="#10b981" />
+        <circle cx="100" cy="100" r="50" fill="#0f172a" />
+        <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="fill-green-400 font-game" style="font-size: 20px;">${wins}W</text>
+      </svg>
+    `;
+  }
+  
+  // All losses - full red circle
+  if (wins === 0) {
+    return `
+      <svg viewBox="0 0 200 200" class="w-full h-full">
+        <circle cx="100" cy="100" r="80" fill="#ef4444" />
+        <circle cx="100" cy="100" r="50" fill="#0f172a" />
+        <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="fill-red-400 font-game" style="font-size: 20px;">${losses}L</text>
+      </svg>
+    `;
+  }
+  
+  // Mixed wins and losses - draw pie chart
+  const winPercentage = wins / total;
+  
+  // Helper function to calculate point on circle
+  function getCoordinatesForPercent(percent: number): { x: number; y: number } {
+    const angle = 2 * Math.PI * (percent - 0.25); // -0.25 to start from top
+    return {
+      x: Math.cos(angle),
+      y: Math.sin(angle)
+    };
+  }
+  
+  // Create pie slice path
+  function createSlicePath(startPercent: number, endPercent: number, radius: number): string {
+    const start = getCoordinatesForPercent(startPercent);
+    const end = getCoordinatesForPercent(endPercent);
+    const largeArcFlag = (endPercent - startPercent) > 0.5 ? 1 : 0;
+    
+    return [
+      `M 100 100`,
+      `L ${100 + start.x * radius} ${100 + start.y * radius}`,
+      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${100 + end.x * radius} ${100 + end.y * radius}`,
+      'Z'
+    ].join(' ');
+  }
+  
+  const winsPath = createSlicePath(0, winPercentage, 80);
+  const lossesPath = createSlicePath(winPercentage, 1, 80);
+  
+  return `
+    <svg viewBox="0 0 200 200" class="w-full h-full">
+      <!-- Wins slice (green) -->
+      <path d="${winsPath}" fill="#10b981" />
+      
+      <!-- Losses slice (red) -->
+      <path d="${lossesPath}" fill="#ef4444" />
+      
+      <!-- Center circle (to make it a donut) -->
+      <circle cx="100" cy="100" r="50" fill="#0f172a" />
+      
+      <!-- Center text showing total -->
+      <text 
+        x="100" 
+        y="95" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        class="fill-white font-game"
+        style="font-size: 22px;"
+      >
+        ${wins}W - ${losses}L
+      </text>
+      <text 
+        x="100" 
+        y="115" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        class="fill-white/60"
+        style="font-size: 12px;"
+      >
+        ${total} ${t('dashboard.games')}
+      </text>
+    </svg>
+  `;
 }

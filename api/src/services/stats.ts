@@ -14,8 +14,6 @@ export interface UserStats {
 	wins: number;
 	losses: number;
 	win_rate: number;
-	win_streak: number;
-	best_win_streak: number;
 	total_points_scored: number;
 	total_points_conceded: number;
 	tournaments_played: number;
@@ -202,8 +200,6 @@ export function updateStatsAfterMatch(
       UPDATE user_stats SET
         total_games = total_games + 1,
         wins = wins + 1,
-        win_streak = win_streak + 1,
-        best_win_streak = MAX(best_win_streak, win_streak + 1),
         total_points_scored = total_points_scored + ?,
         total_points_conceded = total_points_conceded + ?,
         updated_at = CURRENT_TIMESTAMP
@@ -221,7 +217,6 @@ export function updateStatsAfterMatch(
       UPDATE user_stats SET
         total_games = total_games + 1,
         losses = losses + 1,
-        win_streak = 0,
         total_points_scored = total_points_scored + ?,
         total_points_conceded = total_points_conceded + ?,
         updated_at = CURRENT_TIMESTAMP
@@ -282,7 +277,7 @@ export function syncAllStats(): { synced: number; tournamentsUpdated: number } {
 	db.prepare(`
 		UPDATE user_stats SET 
 			total_games = 0, wins = 0, losses = 0, 
-			win_streak = 0, total_points_scored = 0, total_points_conceded = 0,
+			total_points_scored = 0, total_points_conceded = 0,
 			tournaments_played = 0, tournaments_won = 0,
 			updated_at = CURRENT_TIMESTAMP
 	`).run();
