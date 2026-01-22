@@ -30,10 +30,6 @@ const en: Translations = {
 		forgotPassword: 'Forgot Password?',
 		noAccount: "Don't have an account?",
 		hasAccount: 'Already have an account?',
-		orContinueWith: 'Or continue with',
-		loginWithGoogle: 'Login with Google',
-		loginWithGithub: 'Login with GitHub',
-		loginWith42: 'Login with 42',
 	},
 	home: {
 		title: 'Welcome to Pong',
@@ -267,10 +263,6 @@ const tr: Translations = {
 		forgotPassword: 'Şifremi Unuttum?',
 		noAccount: 'Hesabınız yok mu?',
 		hasAccount: 'Zaten hesabınız var mı?',
-		orContinueWith: 'Veya şununla devam et',
-		loginWithGoogle: 'Google ile Giriş',
-		loginWithGithub: 'GitHub ile Giriş',
-		loginWith42: '42 ile Giriş',
 	},
 	home: {
 		title: "Pong'a Hoş Geldiniz",
@@ -504,10 +496,6 @@ const de: Translations = {
 		forgotPassword: 'Passwort vergessen?',
 		noAccount: 'Noch kein Konto?',
 		hasAccount: 'Bereits ein Konto?',
-		orContinueWith: 'Oder fortfahren mit',
-		loginWithGoogle: 'Mit Google anmelden',
-		loginWithGithub: 'Mit GitHub anmelden',
-		loginWith42: 'Mit 42 anmelden',
 	},
 	home: {
 		title: 'Willkommen bei Pong',
