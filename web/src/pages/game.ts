@@ -68,9 +68,10 @@ export function renderGamePage(): void {
 
 	if (mode === 'invite') {
 		const roomId = urlParams.get('roomId');
+		const invitedUserId = urlParams.get('invitedUserId');
 		if (roomId) {
 			renderNavbar();
-			startInviteGame(content, roomId);
+			startInviteGame(content, roomId, invitedUserId ? parseInt(invitedUserId) : undefined);
 			return;
 		}
 	}
@@ -795,8 +796,8 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
 	cleanupFunctions.push(unsubGameStart, unsubDisconnect);
 }
 
-function startInviteGame(content: HTMLElement, roomId: string): void {
-	console.log('[Game] Starting invite game for room:', roomId);
+function startInviteGame(content: HTMLElement, roomId: string, invitedUserId?: number): void {
+	console.log('[Game] Starting invite game for room:', roomId, 'invitedUserId:', invitedUserId);
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
       <h2 class="font-game text-2xl text-pong-primary mb-8">Game Invitation</h2>
@@ -825,8 +826,9 @@ function startInviteGame(content: HTMLElement, roomId: string): void {
 		console.log('[Game] Socket error:', data);
 		if (data.message === 'Room not found or full') {
 			// Room doesn't exist yet, we must be the inviter. Create it.
-			console.log('[Game] Room not found, creating it...');
-			gameSocket.createRoom(roomId);
+			console.log('[Game] Room not found, creating it with invitedUserId:', invitedUserId);
+			// Pass invitedUserId to make this a private room
+			gameSocket.createRoom(roomId, invitedUserId);
 		} else {
 			alert(data.message || 'Game error');
 			cleanup();

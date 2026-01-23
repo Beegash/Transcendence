@@ -61,7 +61,7 @@ class RoomManager {
 	/**
 	 * Create new room for human vs human
 	 */
-	createRoom(ws: WebSocket | null, playerId: string, userId?: number, username?: string, customRoomId?: string, forceSlot?: 1 | 2): GameRoom {
+	createRoom(ws: WebSocket | null, playerId: string, userId?: number, username?: string, customRoomId?: string, forceSlot?: 1 | 2, invitedUserId?: number): GameRoom {
 		const roomId = customRoomId || this.generateRoomId();
 
 		const player: Player = {
@@ -87,10 +87,11 @@ class RoomManager {
 			aiLoop: null,
 			createdAt: new Date(),
 			isVsAI: false,
+			invitedUserId,
 		};
 
 		this.rooms.set(roomId, room);
-		console.log(`Room ${roomId} created (Slot: ${forceSlot || 1})`);
+		console.log(`Room ${roomId} created (Slot: ${forceSlot || 1})${invitedUserId ? ` [Private: invited user ${invitedUserId}]` : ''}`);
 		return room;
 	}
 
@@ -145,6 +146,15 @@ class RoomManager {
 	joinRoom(roomId: string, ws: WebSocket, playerId: string, userId?: number, username?: string, forceSlot?: 1 | 2): GameRoom | null {
 		const room = this.rooms.get(roomId);
 		if (!room) return null;
+
+		// Check if this is a private invite room
+		if (room.invitedUserId) {
+			// Only the invited user can join
+			if (!userId || userId !== room.invitedUserId) {
+				console.log(`User ${userId} tried to join private room ${roomId} but is not the invited user (${room.invitedUserId})`);
+				return null;
+			}
+		}
 
 		const player: Player = {
 			id: playerId,
@@ -378,10 +388,10 @@ class RoomManager {
 			const player2Score = room.state.score.player2;
 			const player1Alias = room.player1?.username;
 			const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
-			
+
 			// Determine match type
 			const matchType = room.isVsAI ? 'ai' : 'casual';
-			
+
 			// Only record if at least one player is a real user
 			if (player1Id || player2Id) {
 				recordMatch(
@@ -519,11 +529,15 @@ class RoomManager {
 	}
 
 	/**
-	 * Get active rooms
+	 * Get active rooms (excludes private invite rooms and tournament rooms)
 	 */
 	getActiveRooms(): Array<{ id: string; players: number; status: string; isVsAI: boolean }> {
 		const result: Array<{ id: string; players: number; status: string; isVsAI: boolean }> = [];
 		for (const [id, room] of this.rooms) {
+			// Skip private invite rooms (they have invitedUserId or start with 'invite_')
+			if (room.invitedUserId || id.startsWith('invite_') || id.startsWith('tournament_')) {
+				continue;
+			}
 			result.push({
 				id,
 				players: (room.player1 ? 1 : 0) + (room.player2 && !room.player2.isAI ? 1 : 0),

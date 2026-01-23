@@ -178,10 +178,10 @@ async function loadFriends(): Promise<void> {
 					targetBtn.textContent = 'Inviting...';
 
 					try {
-						const result = await api.post<{ roomId: string }>(`/users/invite/${targetId}`, {});
+						const result = await api.post<{ roomId: string; invitedUserId: number }>(`/users/invite/${targetId}`, {});
 						if (result.success && result.data) {
-							// Navigate to game with invite mode and the new roomId
-							router.navigate(`/game?mode=invite&roomId=${result.data.roomId}`);
+							// Navigate to game with invite mode, roomId, and invitedUserId for private room
+							router.navigate(`/game?mode=invite&roomId=${result.data.roomId}&invitedUserId=${result.data.invitedUserId}`);
 						} else {
 							targetBtn.disabled = false;
 							targetBtn.textContent = 'Invite';

@@ -478,7 +478,7 @@ async function handleFriendAction(e: Event, action: 'accept' | 'reject'): Promis
 async function handleGameInviteAction(e: Event, action: 'accept' | 'reject'): Promise<void> {
   const btn = e.currentTarget as HTMLButtonElement;
   const notifId = btn.getAttribute('data-notif-id');
-  const roomId = btn.getAttribute('data-room-id');
+  const notifData = btn.getAttribute('data-room-id'); // This now contains JSON data
   const { api } = await import('../utils/api');
   const { router } = await import('../utils/router');
 
@@ -488,9 +488,26 @@ async function handleGameInviteAction(e: Event, action: 'accept' | 'reject'): Pr
     // 1. Mark notification as read
     await api.put(`/users/notifications/${notifId}/read`, {});
 
-    if (action === 'accept' && roomId) {
-      // 2. Navigate to game
-      router.navigate(`/game?mode=invite&roomId=${roomId}`);
+    if (action === 'accept' && notifData) {
+      // Parse notification data (can be JSON or plain roomId for backwards compatibility)
+      let roomId: string;
+      let inviterId: number | undefined;
+      
+      try {
+        const parsed = JSON.parse(notifData);
+        roomId = parsed.roomId;
+        inviterId = parsed.inviterId;
+      } catch {
+        // Backwards compatibility: if it's not JSON, treat as plain roomId
+        roomId = notifData;
+      }
+      
+      // 2. Navigate to game with inviterId (the person who invited us)
+      let url = `/game?mode=invite&roomId=${roomId}`;
+      if (inviterId) {
+        url += `&inviterId=${inviterId}`;
+      }
+      router.navigate(url);
     } else {
       // 3. Just refresh notifications
       fetchNotifications();

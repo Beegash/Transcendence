@@ -141,11 +141,24 @@ export function removeParticipant(tournamentId: number, userId: number): boolean
 }
 
 /**
- * Get tournament participants
+ * Get tournament participants with current usernames
  */
 export function getParticipants(tournamentId: number): TournamentParticipant[] {
-	const stmt = db.prepare('SELECT * FROM tournament_participants WHERE tournament_id = ? ORDER BY seed');
-	return stmt.all(tournamentId) as TournamentParticipant[];
+	// Join with users table to get current username instead of cached alias
+	const stmt = db.prepare(`
+		SELECT tp.*, u.username as current_username
+		FROM tournament_participants tp
+		LEFT JOIN users u ON tp.user_id = u.id
+		WHERE tp.tournament_id = ?
+		ORDER BY tp.seed
+	`);
+	const participants = stmt.all(tournamentId) as (TournamentParticipant & { current_username?: string })[];
+	
+	// Override alias with current username if user exists
+	return participants.map(p => ({
+		...p,
+		alias: p.current_username || p.alias
+	}));
 }
 
 /**
@@ -254,15 +267,31 @@ function generateBracket(tournamentId: number, participants: TournamentParticipa
 }
 
 /**
- * Get tournament matches
+ * Get tournament matches with current usernames
  */
 export function getTournamentMatches(tournamentId: number): TournamentMatch[] {
+	// Join with users table to get current usernames instead of cached aliases
 	const stmt = db.prepare(`
-    SELECT * FROM matches 
-    WHERE tournament_id = ? 
-    ORDER BY tournament_round, tournament_match_number
-  `);
-	return stmt.all(tournamentId) as TournamentMatch[];
+		SELECT m.*,
+			u1.username as player1_current_username,
+			u2.username as player2_current_username
+		FROM matches m
+		LEFT JOIN users u1 ON m.player1_id = u1.id
+		LEFT JOIN users u2 ON m.player2_id = u2.id
+		WHERE m.tournament_id = ?
+		ORDER BY m.tournament_round, m.tournament_match_number
+	`);
+	const matches = stmt.all(tournamentId) as (TournamentMatch & { 
+		player1_current_username?: string;
+		player2_current_username?: string;
+	})[];
+	
+	// Override aliases with current usernames if users exist
+	return matches.map(m => ({
+		...m,
+		player1_alias: m.player1_current_username || m.player1_alias,
+		player2_alias: m.player2_current_username || m.player2_alias
+	}));
 }
 
 /**

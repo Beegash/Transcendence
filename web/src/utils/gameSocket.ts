@@ -120,9 +120,11 @@ class GameSocket {
 
 	/**
 	 * Create a new game room
+	 * @param roomId Optional custom room ID
+	 * @param invitedUserId Optional user ID for private invite rooms
 	 */
-	createRoom(roomId?: string): void {
-		this.send({ type: 'create_room', roomId });
+	createRoom(roomId?: string, invitedUserId?: number): void {
+		this.send({ type: 'create_room', roomId, invitedUserId });
 	}
 
 	/**

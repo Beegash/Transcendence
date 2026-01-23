@@ -93,6 +93,7 @@ const en: Translations = {
 		waitingForOpponent: 'Waiting for opponent...',
 		controls: 'Player 1: W/S • Player 2: ↑/↓',
 		realTimeMultiplayer: 'Real-time multiplayer',
+		langChangeWarning: 'You cannot change the language while in a game lobby. The game will be cancelled.',
 	},
 	tournament: {
 		title: 'Tournaments',
@@ -326,6 +327,7 @@ const tr: Translations = {
 		waitingForOpponent: 'Rakip bekleniyor...',
 		controls: 'Oyuncu 1: W/S • Oyuncu 2: ↑/↓',
 		realTimeMultiplayer: 'Gerçek zamanlı çok oyunculu',
+		langChangeWarning: 'Oyun lobisindeyken dil değiştiremezsiniz. Oyun iptal edilecektir.',
 	},
 	tournament: {
 		title: 'Turnuvalar',
@@ -559,6 +561,7 @@ const de: Translations = {
 		waitingForOpponent: 'Warte auf Gegner...',
 		controls: 'Spieler 1: W/S • Spieler 2: ↑/↓',
 		realTimeMultiplayer: 'Echtzeit-Multiplayer',
+		langChangeWarning: 'Du kannst die Sprache nicht ändern, während du in einer Spiellobby bist. Das Spiel wird abgebrochen.',
 	},
 	tournament: {
 		title: 'Turniere',

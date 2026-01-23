@@ -16,6 +16,7 @@ interface WsMessage {
 	position?: number;
 	token?: string;
 	tournamentId?: number;
+	invitedUserId?: number; // For private invite rooms
 }
 
 export default async function gameRoutes(fastify: FastifyInstance) {
@@ -53,17 +54,17 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 				}
 
 				switch (message.type) {
-					// Create room for human vs human
-					case 'create_room': {
-						const room = roomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username, message.roomId);
-						currentRoomId = room.id;
-						ws.send(JSON.stringify({
-							type: 'room_created',
-							roomId: room.id,
-							player: 1,
-						}));
-						break;
-					}
+				// Create room for human vs human
+				case 'create_room': {
+					const room = roomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username, message.roomId, undefined, message.invitedUserId);
+					currentRoomId = room.id;
+					ws.send(JSON.stringify({
+						type: 'room_created',
+						roomId: room.id,
+						player: 1,
+					}));
+					break;
+				}
 
 					// Create room for human vs AI
 					case 'create_ai_room': {
@@ -77,45 +78,52 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 						break;
 					}
 
-					// Join existing room
-					case 'join_room': {
-						if (!message.roomId) {
-							ws.send(JSON.stringify({ type: 'error', message: 'Room ID required' }));
-							break;
-						}
-
-						const room = roomManager.joinRoom(
-							message.roomId,
-							ws as unknown as WebSocket,
-							playerId,
-							userId,
-							username
-						);
-
-						if (!room) {
-							ws.send(JSON.stringify({ type: 'error', message: 'Room not found or full' }));
-							break;
-						}
-
-						currentRoomId = room.id;
-
-						// Send room_joined to Player 2 with host info
-						ws.send(JSON.stringify({
-							type: 'room_joined',
-							roomId: room.id,
-							player: 2,
-							hostUsername: room.player1?.username || 'Anonymous',
-						}));
-
-						// Notify Player 1 that opponent joined
-						if (room.player1?.ws) {
-							room.player1.ws.send(JSON.stringify({
-								type: 'opponent_joined',
-								username: username || 'Anonymous',
-							}));
-						}
+				// Join existing room
+				case 'join_room': {
+					if (!message.roomId) {
+						ws.send(JSON.stringify({ type: 'error', message: 'Room ID required' }));
 						break;
 					}
+
+					// Check if room exists and is private
+					const existingRoom = roomManager.getRoom(message.roomId);
+					if (existingRoom && existingRoom.invitedUserId && userId !== existingRoom.invitedUserId) {
+						ws.send(JSON.stringify({ type: 'error', message: 'This is a private room. Only the invited user can join.' }));
+						break;
+					}
+
+					const room = roomManager.joinRoom(
+						message.roomId,
+						ws as unknown as WebSocket,
+						playerId,
+						userId,
+						username
+					);
+
+					if (!room) {
+						ws.send(JSON.stringify({ type: 'error', message: 'Room not found or full' }));
+						break;
+					}
+
+					currentRoomId = room.id;
+
+					// Send room_joined to Player 2 with host info
+					ws.send(JSON.stringify({
+						type: 'room_joined',
+						roomId: room.id,
+						player: 2,
+						hostUsername: room.player1?.username || 'Anonymous',
+					}));
+
+					// Notify Player 1 that opponent joined
+					if (room.player1?.ws) {
+						room.player1.ws.send(JSON.stringify({
+							type: 'opponent_joined',
+							username: username || 'Anonymous',
+						}));
+					}
+					break;
+				}
 
 					case 'ready': {
 						if (currentRoomId) {

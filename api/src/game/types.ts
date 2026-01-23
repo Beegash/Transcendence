@@ -39,6 +39,7 @@ export interface GameRoom {
 	aiLoop: NodeJS.Timeout | null; // AI refresh timer
 	createdAt: Date;
 	isVsAI: boolean;
+	invitedUserId?: number; // For private invite rooms - only this user can join
 }
 
 export interface ClientGameState {

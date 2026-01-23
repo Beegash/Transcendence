@@ -669,12 +669,15 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			// Generate a unique room ID
 			const roomId = `invite_${Math.random().toString(36).substring(2, 10)}`;
 
+			// Store both roomId and invitedUserId so only the invited user can join
+			const notificationData = JSON.stringify({ roomId, invitedUserId: targetId, inviterId: userId });
+
 			try {
 				db.prepare(
 					'INSERT INTO notifications (user_id, type, sender_id, status, data) VALUES (?, ?, ?, ?, ?)'
-				).run(targetId, 'game_invite', userId, 'unread', roomId);
+				).run(targetId, 'game_invite', userId, 'unread', notificationData);
 
-				return reply.send({ success: true, roomId });
+				return reply.send({ success: true, roomId, invitedUserId: targetId });
 			} catch (err) {
 				return reply.code(500).send({ error: 'Failed to send invitation' });
 			}
