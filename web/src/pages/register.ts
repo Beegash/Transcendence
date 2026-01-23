@@ -6,6 +6,7 @@ import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';
 import { auth } from '../utils/auth';
 import { router } from '../utils/router';
+import { getGdprPopupHtml, showGdprPopup, initGdprPopup } from '../components/gdpr-popup';
 
 export function renderRegisterPage(): void {
   // Redirect if already logged in
@@ -54,6 +55,19 @@ export function renderRegisterPage(): void {
               <input type="password" name="confirmPassword" class="input" placeholder="••••••••" required>
             </div>
             
+            <!-- GDPR Consent Checkbox -->
+            <div class="border border-pong-light rounded-lg p-4 bg-pong-darker/50">
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" id="gdpr-consent" name="gdprConsent" class="w-5 h-5 mt-0.5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary flex-shrink-0">
+                <span class="text-sm text-white/80">
+                  ${t('gdpr.checkboxLabel')} 
+                  <button type="button" id="show-gdpr-btn" class="text-pong-primary hover:underline font-medium">
+                    ${t('gdpr.linkText')}
+                  </button>
+                </span>
+              </label>
+            </div>
+            
             <div id="register-error" class="hidden bg-red-500/10 text-red-400 px-4 py-3 rounded-lg text-sm"></div>
             <div id="register-success" class="hidden bg-green-500/10 text-green-400 px-4 py-3 rounded-lg text-sm"></div>
             
@@ -74,7 +88,15 @@ export function renderRegisterPage(): void {
       </div>
     </div>
 
+    ${getGdprPopupHtml()}
   `;
+
+  // Initialize GDPR popup
+  initGdprPopup();
+
+  // GDPR link click handler
+  const showGdprBtn = document.getElementById('show-gdpr-btn');
+  showGdprBtn?.addEventListener('click', showGdprPopup);
 
   // Form submission
   const form = document.getElementById('register-form') as HTMLFormElement;
@@ -90,10 +112,18 @@ export function renderRegisterPage(): void {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
+    const gdprConsent = document.getElementById('gdpr-consent') as HTMLInputElement;
 
     // Hide previous messages
     errorDiv.classList.add('hidden');
     successDiv.classList.add('hidden');
+
+    // Validate GDPR consent
+    if (!gdprConsent?.checked) {
+      errorDiv.textContent = t('gdpr.mustAgree');
+      errorDiv.classList.remove('hidden');
+      return;
+    }
 
     // Validate passwords match
     if (password !== confirmPassword) {

@@ -4,6 +4,7 @@
 
 import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';
+import { getGdprPopupHtml, showGdprPopup, initGdprPopup } from '../components/gdpr-popup';
 
 export function renderHomePage(): void {
   renderNavbar();
@@ -103,8 +104,17 @@ export function renderHomePage(): void {
     <!-- Footer -->
     <footer class="py-8 border-t border-white/10">
       <div class="max-w-6xl mx-auto px-4 text-center text-white/60">
-        <p>© ${new Date().getFullYear()} ft_transcendence • 42 School Project</p>
+        <p>© ${new Date().getFullYear()} ft_transcendence • 42 School Project • <button id="home-gdpr-link" class="text-pong-primary hover:underline cursor-pointer">GDPR</button></p>
       </div>
     </footer>
+
+    ${getGdprPopupHtml()}
   `;
+
+  // Initialize GDPR popup
+  initGdprPopup();
+
+  // GDPR link click handler
+  const gdprLink = document.getElementById('home-gdpr-link');
+  gdprLink?.addEventListener('click', showGdprPopup);
 }
