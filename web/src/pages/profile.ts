@@ -94,7 +94,7 @@ export async function renderProfilePage(): Promise<void> {
             <h1 class="font-game text-3xl text-gradient mb-2">${user.displayName || user.username}</h1>
             <p class="text-white/70 mb-4">@${user.username}${isOwnProfile ? ` • ${user.email}` : ''}</p>
             <div class="flex flex-wrap justify-center md:justify-start gap-2">
-              <span class="badge ${user.isOnline ? 'badge-online' : 'badge-offline'}">${user.isOnline ? t('profile.online') : t('profile.offline')}</span>
+              <span class="badge ${(isOwnProfile || user.isOnline) ? 'badge-online' : 'badge-offline'}">${(isOwnProfile || user.isOnline) ? t('profile.online') : t('profile.offline')}</span>
               ${user.language ? `<span class="text-white/50">Language: ${user.language.toUpperCase()}</span>` : ''}
             </div>
           </div>

@@ -12,6 +12,7 @@ import userRoutes from "./routes/users.js";
 import gameRoutes from "./routes/game.js";
 import tournamentRoutes from "./routes/tournament.js";
 import statsRoutes from "./routes/stats.js";
+import presenceRoutes from "./routes/presence.js";
 
 const app = Fastify({ logger: true });
 
@@ -44,6 +45,7 @@ await app.register(userRoutes, { prefix: '/users' });
 await app.register(gameRoutes, { prefix: '/game' });
 await app.register(tournamentRoutes, { prefix: '/tournaments' });
 await app.register(statsRoutes, { prefix: '/stats' });
+await app.register(presenceRoutes, { prefix: '/presence' });
 
 // Serve static uploads - only for /uploads/ path
 import path from 'path';

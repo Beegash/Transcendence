@@ -75,6 +75,9 @@ function init(): void {
 	initBackground();
 	router.init();
 
+	// Initialize presence tracking if user is already authenticated
+	auth.initPresence();
+
 	console.log('✅ ft_transcendence ready!');
 }
 

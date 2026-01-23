@@ -25,6 +25,15 @@ export async function initDatabase() {
             const migrationSQL = readFileSync(join(migrationsDir, file), "utf-8");
             db.exec(migrationSQL);
         }
+
+        // Reset all users to offline on server startup
+        // This clears any stale online status from previous sessions
+        // Users will be marked online again when they connect via presence WebSocket
+        const result = db.prepare('UPDATE users SET is_online = FALSE WHERE is_online = TRUE').run();
+        if (result.changes > 0) {
+            console.log(`Reset ${result.changes} user(s) to offline status on startup`);
+        }
+
         console.log("Database initialization complete");
     } catch (error) {
         console.error("Database initialization failed:", error);

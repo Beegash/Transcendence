@@ -5,6 +5,7 @@
 
 import { api } from './api';
 import { router } from './router';
+import { presenceSocket } from './presenceSocket';
 
 export interface User {
 	id: number;
@@ -111,6 +112,10 @@ class AuthStore {
 			this.state.isAuthenticated = true;
 			this.saveToStorage();
 			this.notifyListeners();
+
+			// Connect to presence socket for online status tracking
+			this.connectPresence();
+
 			return { success: true };
 		}
 
@@ -121,6 +126,9 @@ class AuthStore {
 	 * Logout user
 	 */
 	async logout(): Promise<void> {
+		// Disconnect presence socket first (sends logout message)
+		presenceSocket.disconnect(true);
+
 		// Call logout API (optional, for server-side cleanup)
 		if (this.state.token) {
 			await api.post('/auth/logout');
@@ -192,6 +200,27 @@ class AuthStore {
 
 	private notifyListeners(): void {
 		this.listeners.forEach((listener) => listener());
+	}
+
+	/**
+	 * Connect to presence WebSocket for online status tracking
+	 */
+	private connectPresence(): void {
+		if (this.state.token) {
+			presenceSocket.connect(this.state.token).catch((err) => {
+				console.error('[Auth] Failed to connect presence socket:', err);
+			});
+		}
+	}
+
+	/**
+	 * Initialize presence connection if already authenticated
+	 * Should be called once on app startup
+	 */
+	initPresence(): void {
+		if (this.state.isAuthenticated && this.state.token) {
+			this.connectPresence();
+		}
 	}
 }
 

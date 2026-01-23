@@ -106,6 +106,7 @@ function renderSearchResults(container: HTMLElement, users: any[]): void {
           <div class="text-white font-medium">${user.displayName}</div>
           <div class="text-white/50 text-xs">@${user.username}</div>
         </div>
+        <span class="badge ${user.isOnline ? 'badge-online' : 'badge-offline'} ml-2"></span>
       </div>
       <div class="flex gap-2">
         <a href="/profile/${user.id}" data-link class="btn btn-secondary text-xs px-3 py-1">View Profile</a>
