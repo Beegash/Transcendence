@@ -377,7 +377,7 @@ async function fetchNotifications(): Promise<void> {
                   </div>
                 ` : n.type === 'game_invite' && n.status === 'unread' ? `
                   <div class="flex gap-2 mt-2">
-                    <button class="btn btn-primary text-[10px] py-1 px-3 accept-game-btn" data-notif-id="${n.id}" data-room-id="${n.data}">
+                    <button class="btn btn-primary text-[10px] py-1 px-3 accept-game-btn" data-notif-id="${n.id}" data-room-id="${encodeURIComponent(n.data || '')}">
                       ${t('notifications.accept')}
                     </button>
                     <button class="btn btn-secondary text-[10px] py-1 px-3 decline-game-btn" data-notif-id="${n.id}">
@@ -478,7 +478,7 @@ async function handleFriendAction(e: Event, action: 'accept' | 'reject'): Promis
 async function handleGameInviteAction(e: Event, action: 'accept' | 'reject'): Promise<void> {
   const btn = e.currentTarget as HTMLButtonElement;
   const notifId = btn.getAttribute('data-notif-id');
-  const notifData = btn.getAttribute('data-room-id'); // This now contains JSON data
+  const notifDataEncoded = btn.getAttribute('data-room-id'); // This contains URL-encoded JSON data
   const { api } = await import('../utils/api');
   const { router } = await import('../utils/router');
 
@@ -488,7 +488,10 @@ async function handleGameInviteAction(e: Event, action: 'accept' | 'reject'): Pr
     // 1. Mark notification as read
     await api.put(`/users/notifications/${notifId}/read`, {});
 
-    if (action === 'accept' && notifData) {
+    if (action === 'accept' && notifDataEncoded) {
+      // Decode the URL-encoded data first
+      const notifData = decodeURIComponent(notifDataEncoded);
+      
       // Parse notification data (can be JSON or plain roomId for backwards compatibility)
       let roomId: string;
       let inviterId: number | undefined;
