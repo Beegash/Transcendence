@@ -363,20 +363,51 @@ async function loadMatchHistory(userId: number): Promise<void> {
       : (match.player1_display_name || match.player1_username || 'Unknown');
     const myScore = isPlayer1 ? match.player1_score : match.player2_score;
     const oppScore = isPlayer1 ? match.player2_score : match.player1_score;
+    const matchDate = match.ended_at ? formatMatchDate(match.ended_at as string) : '';
 
     return `
       <div class="flex items-center justify-between py-3 border-b border-pong-light last:border-0">
         <div class="flex items-center gap-4">
           <span class="${won ? 'text-green-400' : 'text-red-400'} font-bold">${won ? 'WIN' : 'LOSS'}</span>
           <span>vs ${opponentName}</span>
+          <span class="badge text-xs ${getMatchTypeBadge(match.match_type as string)}">${getMatchTypeLabel(match.match_type as string)}</span>
         </div>
         <div class="text-right">
           <div class="font-game">${myScore} - ${oppScore}</div>
-          <div class="text-white/60 text-sm">${match.match_type}</div>
+          ${matchDate ? `<div class="text-white/50 text-xs">${matchDate}</div>` : ''}
         </div>
       </div>
     `;
   }).join('');
 
   container.innerHTML = `<div class="space-y-0">${matchesHtml}</div>`;
+}
+
+// Format match date - handles SQLite UTC timestamps
+function formatMatchDate(dateStr: string): string {
+  let date: Date;
+  if (dateStr && !dateStr.includes('Z') && !dateStr.includes('+')) {
+    const isoDate = dateStr.replace(' ', 'T') + 'Z';
+    date = new Date(isoDate);
+  } else {
+    date = new Date(dateStr);
+  }
+  return date.toLocaleDateString();
+}
+
+// Get badge style for match type
+function getMatchTypeBadge(type: string): string {
+  switch (type) {
+    case 'tournament': return 'bg-yellow-500/20 text-yellow-400';
+    case 'ai': return 'bg-purple-500/20 text-purple-400';
+    case 'casual': return 'bg-blue-500/20 text-blue-400';
+    case 'local': return 'bg-green-500/20 text-green-400';
+    case 'online': return 'bg-cyan-500/20 text-cyan-400';
+    default: return 'bg-gray-500/20 text-white/80';
+  }
+}
+
+// Get translated label for match type
+function getMatchTypeLabel(type: string): string {
+  return t(`dashboard.matchTypes.${type}`) || type;
 }
