@@ -49,24 +49,7 @@ export function renderSettingsPage(): void {
         <div id="username-success" class="text-green-400 text-sm mt-2 hidden"></div>
       </div>
       
-      <!-- Notifications -->
-      <div class="card mb-6">
-        <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.notifications')}</h2>
-        <div class="space-y-4">
-          <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-white">${t('settings.gameInvitations')}</span>
-            <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
-          </label>
-          <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-white">${t('settings.tournamentUpdates')}</span>
-            <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
-          </label>
-          <label class="flex items-center justify-between cursor-pointer">
-            <span class="text-white">${t('settings.friendRequests')}</span>
-            <input type="checkbox" checked class="w-5 h-5 rounded bg-pong-dark border-pong-light text-pong-primary focus:ring-pong-primary">
-          </label>
-        </div>
-      </div>
+    
       <!-- Privacy (GDPR) -->
       <div class="card mb-6">
         <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.privacy')}</h2>
