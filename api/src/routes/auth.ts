@@ -253,8 +253,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			// 2. Explicitly delete sessions first (removes IP/user agent data)
 			db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
 
-			// 3. Delete notifications
+			// 3. Delete notifications (both received AND sent by this user)
 			db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
+			db.prepare('DELETE FROM notifications WHERE sender_id = ?').run(userId);
 
 			// 4. Handle tournament cleanup (forfeit matches, update aliases)
 			handleUserDeletion(userId, 'Deleted User');
@@ -299,9 +300,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
 				VALUES (?, 'account_anonymize', '{"note": "User requested anonymization"}')
 			`).run(userId);
 
-			// 2. Delete sessions & notifications & friends
+			// 2. Delete sessions & notifications (both received AND sent) & friends
 			db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
 			db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
+			db.prepare('DELETE FROM notifications WHERE sender_id = ?').run(userId);
 			db.prepare('DELETE FROM friendships WHERE user_id = ? OR friend_id = ?').run(userId, userId);
 
 			// 3. Handle matches/tournaments cleanup if needed (stats are kept, but maybe active tournaments need to know?)

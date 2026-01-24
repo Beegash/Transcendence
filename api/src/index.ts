@@ -16,6 +16,41 @@ import presenceRoutes from "./routes/presence.js";
 
 const app = Fastify({ logger: true });
 
+// Global error handler - prevents stack trace leaks and provides consistent error responses
+app.setErrorHandler((error, request, reply) => {
+  // Log the error for debugging
+  app.log.error({
+    err: error,
+    requestId: request.id,
+    url: request.url,
+    method: request.method,
+  });
+
+  // Handle specific error types
+  if (error.validation) {
+    // Fastify validation error
+    return reply.status(400).send({
+      error: 'Validation error',
+      details: error.validation.map(v => v.message).join(', '),
+    });
+  }
+
+  // Handle known HTTP errors
+  const statusCode = error.statusCode || 500;
+  
+  // Don't leak internal error messages in production
+  const message = statusCode >= 500 
+    ? 'Internal server error' 
+    : error.message || 'An error occurred';
+
+  return reply.status(statusCode).send({ error: message });
+});
+
+// 404 handler for undefined routes
+app.setNotFoundHandler((request, reply) => {
+  reply.status(404).send({ error: 'Route not found' });
+});
+
 // Plugins
 await app.register(import("@fastify/helmet"), {
   contentSecurityPolicy: false, // Disable for WebSocket compatibility

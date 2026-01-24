@@ -9,12 +9,15 @@ interface ApiResponse<T> {
 	success: boolean;
 	data?: T;
 	error?: string;
+	statusCode?: number;
 }
 
 interface RequestOptions {
 	method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 	body?: unknown;
 	headers?: Record<string, string>;
+	// If true, don't log errors to console (for expected failures like auth errors)
+	silent?: boolean;
 }
 
 class ApiClient {
@@ -26,9 +29,13 @@ class ApiClient {
 
 	/**
 	 * Make an API request
+	 * 
+	 * Note: 400/401 errors are EXPECTED for validation failures and auth errors.
+	 * These are not bugs - they indicate the API is working correctly.
+	 * The error message will be returned in the ApiResponse for the UI to display.
 	 */
 	async request<T>(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
-		const { method = 'GET', body, headers = {} } = options;
+		const { method = 'GET', body, headers = {}, silent = false } = options;
 
 		// Get auth token from localStorage
 		const isFormData = body instanceof FormData;
@@ -71,39 +78,56 @@ class ApiClient {
 						return {
 							success: false,
 							error: 'errors.fileTooLarge', // Will be translated by the UI
+							statusCode: 413,
 						};
 					}
 					return {
 						success: false,
 						error: `Server error (${response.status}). Please try again.`,
+						statusCode: response.status,
 					};
 				}
 
 				return {
 					success: false,
 					error: `Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`,
+					statusCode: response.status,
 				};
 			}
 
 			if (!response.ok) {
+				const errorMessage = data.error || data.message || `HTTP ${response.status}`;
+				
+				// Only log unexpected errors (500+) to console
+				// 400/401/403/404/409 are expected validation/auth errors - not bugs
+				if (!silent && response.status >= 500) {
+					console.error(`[API Error] ${method} ${endpoint}: ${response.status} - ${errorMessage}`);
+				}
+
 				// Special handling for file size errors
 				if (response.status === 413) {
 					return {
 						success: false,
 						error: data.error || 'File size too large. Maximum file size is 5MB. Please compress or resize your image.',
+						statusCode: 413,
 					};
 				}
+				
 				return {
 					success: false,
-					error: data.message || data.error || `HTTP ${response.status}`,
+					error: errorMessage,
+					statusCode: response.status,
 				};
 			}
 
 			return {
 				success: true,
 				data,
+				statusCode: response.status,
 			};
 		} catch (error) {
+			// Network errors are always logged
+			console.error(`[API Network Error] ${method} ${endpoint}:`, error);
 			return {
 				success: false,
 				error: error instanceof Error ? error.message : 'Network error',
