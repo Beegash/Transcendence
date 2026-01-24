@@ -99,20 +99,20 @@ export function renderSettingsPage(): void {
       <!-- Anonymize Confirmation Modal -->
       <div id="anonymize-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80">
         <div class="card max-w-md mx-4">
-          <h3 class="font-game text-xl text-yellow-400 mb-4">Anonymize Account</h3>
+          <h3 class="font-game text-xl text-yellow-400 mb-4">${t('settings.anonymizeModalTitle')}</h3>
           <p class="text-white/80 mb-4">
-            This will remove all your personal data (identity, email) but keep your game statistics under an anonymous name.
+            ${t('settings.anonymizeModalWarning1')}
           </p>
           <p class="text-white/80 mb-4">
-            You will NOT be able to log in to this account again.
+            ${t('settings.anonymizeModalWarning2')}
           </p>
           <p class="text-white/80 mb-2">
-            Type <strong class="text-white">ANONYMIZE</strong> to confirm:
+            ${t('settings.anonymizeModalConfirm')}
           </p>
-          <input type="text" id="anonymize-confirm-input" class="input w-full mb-4" placeholder="Type ANONYMIZE">
+          <input type="text" id="anonymize-confirm-input" class="input w-full mb-4" placeholder="${t('settings.anonymizeModalPlaceholder')}">
           <div class="flex gap-4">
             <button id="cancel-anonymize-btn" class="btn btn-secondary flex-1">${t('common.cancel')}</button>
-            <button id="confirm-anonymize-btn" class="btn btn-warning flex-1" disabled>${t('common.confirm') || 'Confirm'}</button>
+            <button id="confirm-anonymize-btn" class="btn btn-warning flex-1" disabled>${t('common.confirm')}</button>
           </div>
         </div>
       </div>
@@ -120,14 +120,14 @@ export function renderSettingsPage(): void {
       <!-- Delete Confirmation Modal -->
       <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80">
         <div class="card max-w-md mx-4">
-          <h3 class="font-game text-xl text-red-400 mb-4">Confirm Account Deletion</h3>
+          <h3 class="font-game text-xl text-red-400 mb-4">${t('settings.deleteModalTitle')}</h3>
           <p class="text-white/80 mb-6">
-            This action cannot be undone. All your data, including match history, stats, and friends list will be permanently deleted.
+            ${t('settings.deleteModalWarning')}
           </p>
           <p class="text-white/80 mb-6">
-            Type <strong class="text-white">DELETE</strong> to confirm:
+            ${t('settings.deleteModalConfirm')}
           </p>
-          <input type="text" id="delete-confirm-input" class="input mb-4" placeholder="Type DELETE">
+          <input type="text" id="delete-confirm-input" class="input mb-4" placeholder="${t('settings.deleteModalPlaceholder')}">
           <div class="flex gap-4">
             <button id="cancel-delete-btn" class="btn btn-secondary flex-1">${t('common.cancel')}</button>
             <button id="confirm-delete-btn" class="btn btn-danger flex-1" disabled>${t('common.delete')}</button>
@@ -323,18 +323,18 @@ export function renderSettingsPage(): void {
 
   confirmAnonymizeBtn?.addEventListener('click', async () => {
     confirmAnonymizeBtn.disabled = true;
-    confirmAnonymizeBtn.textContent = 'Processing...';
+    confirmAnonymizeBtn.textContent = t('settings.processing');
 
     const result = await api.post('/auth/anonymize', {});
 
     if (result.success) {
       await auth.logout();
-      alert('Account anonymized successfully. You have been logged out.');
+      alert(t('settings.anonymizeSuccess'));
       router.navigate('/');
     } else {
-      alert(result.error || 'Failed to anonymize account');
+      alert(result.error || t('settings.anonymizeFailed'));
       confirmAnonymizeBtn.disabled = false;
-      confirmAnonymizeBtn.textContent = 'Confirm';
+      confirmAnonymizeBtn.textContent = t('common.confirm');
     }
     anonymizeModal?.classList.add('hidden');
   });
@@ -364,18 +364,18 @@ export function renderSettingsPage(): void {
 
   confirmDeleteBtn?.addEventListener('click', async () => {
     confirmDeleteBtn.disabled = true;
-    confirmDeleteBtn.textContent = 'Deleting...';
+    confirmDeleteBtn.textContent = t('settings.deleting');
 
     const result = await api.delete('/auth/account');
 
     if (result.success) {
       await auth.logout();
-      alert('Account deleted successfully');
+      alert(t('settings.deleteSuccess'));
       router.navigate('/');
     } else {
-      alert(result.error || 'Failed to delete account');
+      alert(result.error || t('settings.deleteFailed'));
       confirmDeleteBtn.disabled = false;
-      confirmDeleteBtn.textContent = 'Delete';
+      confirmDeleteBtn.textContent = t('common.delete');
     }
     deleteModal?.classList.add('hidden');
   });
