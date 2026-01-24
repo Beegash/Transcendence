@@ -14,7 +14,7 @@ export const PADDLE_SPEED = 8;
 
 // Ball settings
 export const BALL_SIZE = 10;
-export const BALL_SPEED = 7; // Increased from 5 for faster gameplay
+export const BALL_SPEED = 10; // Increased from 5 for faster gameplay
 export const BALL_SPEED_INCREMENT = 0.3; // Speed increase per paddle hit
 export const BALL_MAX_SPEED = 30; // Cap to prevent unplayable speeds
 

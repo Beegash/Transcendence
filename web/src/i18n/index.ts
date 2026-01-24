@@ -589,7 +589,7 @@ const tr: Translations = {
 		fileTooLarge: 'Dosya boyutu çok büyük. Maksimum dosya boyutu 5MB. Lütfen resminizi sıkıştırın veya yeniden boyutlandırın.',
 		invalidFileType: 'Geçersiz dosya türü. İzin verilenler: JPEG, PNG, GIF, WebP',
 		uploadFailed: 'Dosya yüklenemedi. Lütfen tekrar deneyin.',
-		imageTooLarge: 'Resim çözünürlüğü çok yüksek. Maksimum boyutlar 2048x2048 pikseldir. Lütfen resminizi yeniden boyutlandırın.',
+		imageTooLarge: 'Resim çözünürlüğü çok yüksek. Maksimum boyut 2048x2048 piksel. Lütfen resminizi yeniden boyutlandırın.',
 	},
 	common: {
 		loading: 'Yükleniyor...',
