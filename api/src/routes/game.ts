@@ -186,14 +186,27 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 						let room = roomManager.getRoom(tournamentRoomId);
 
 						if (!room) {
-							// Create room with our tournament-specific ID and explicit slot
-							room = roomManager.createRoom(ws as unknown as WebSocket, playerId, userId, username, tournamentRoomId, mySlot);
+							// Create room with our tournament-specific ID, explicit slot, and tournament info
+							room = roomManager.createRoom(
+								ws as unknown as WebSocket,
+								playerId,
+								userId,
+								username,
+								tournamentRoomId,
+								mySlot,
+								undefined, // invitedUserId
+								match.tournament_id, // tournamentId
+								matchId // tournamentMatchId
+							);
 
 							currentRoomId = tournamentRoomId;
 							ws.send(JSON.stringify({
 								type: 'room_created',
 								roomId: tournamentRoomId,
 								player: mySlot,
+								isTournament: true,
+								tournamentId: match.tournament_id,
+								tournamentMatchId: matchId,
 							}));
 						} else {
 							// Join existing room with explicit slot
@@ -221,6 +234,9 @@ export default async function gameRoutes(fastify: FastifyInstance) {
 								roomId: tournamentRoomId,
 								player: mySlot,
 								hostUsername: mySlot === 2 ? joinedRoom.player1?.username : joinedRoom.player2?.username,
+								isTournament: true,
+								tournamentId: match.tournament_id,
+								tournamentMatchId: matchId,
 							}));
 
 							// Notify the other player

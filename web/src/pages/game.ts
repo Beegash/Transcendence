@@ -87,6 +87,11 @@ function cleanup(): void {
 	cleanupFunctions.forEach(fn => fn());
 	cleanupFunctions = [];
 	gameSocket.disconnect();
+	
+	// Reset tournament variables to prevent casual games being treated as tournament games
+	currentTournamentId = null;
+	currentTournamentMatchId = null;
+	currentRoomId = null;
 }
 
 function renderGameMenu(content: HTMLElement): void {
@@ -686,6 +691,12 @@ function showOnlineLobby(content: HTMLElement): void {
 	const unsubRoomCreated = gameSocket.on('room_created', (data) => {
 		playerNumber = data.player || 1;
 		currentRoomId = data.roomId || null;
+		// Reset tournament variables for casual games
+		// (tournament games set these explicitly when joining tournament match)
+		if (!(data as any).isTournament) {
+			currentTournamentId = null;
+			currentTournamentMatchId = null;
+		}
 		if (refreshInterval) clearInterval(refreshInterval);
 		showWaitingRoom(content, data.roomId!);
 	});
@@ -693,6 +704,11 @@ function showOnlineLobby(content: HTMLElement): void {
 	const unsubRoomJoined = gameSocket.on('room_joined', (data) => {
 		playerNumber = data.player || 2;
 		currentRoomId = data.roomId || null;
+		// Reset tournament variables for casual games
+		if (!(data as any).isTournament) {
+			currentTournamentId = null;
+			currentTournamentMatchId = null;
+		}
 		if (refreshInterval) clearInterval(refreshInterval);
 		// Player 2 goes directly to Ready screen (opponent already exists)
 		showReadyScreen(content, (data as { hostUsername?: string }).hostUsername || 'Opponent');
@@ -995,6 +1011,8 @@ function initOnlineGame(initialState: GameState): void {
 		// If opponent disconnected, show a message
 		if (data.reason === 'opponent_disconnected') {
 			console.log('Opponent disconnected, you win!');
+			// For tournament matches with forfeit, the backend already recorded the result
+			// No need to do anything extra here
 		}
 	});
 
@@ -1003,7 +1021,7 @@ function initOnlineGame(initialState: GameState): void {
 		// If game was in progress, game_over will be sent instead
 		if (gameState.status !== 'finished') {
 			gameState.status = 'finished';
-			alert('Opponent disconnected!');
+			alert(t('game.opponentDisconnected'));
 		}
 	});
 
@@ -1239,6 +1257,10 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 		const resultText = isWinner ? t('game.youWin') : t('game.youLose');
 		const resultColor = isWinner ? 'text-green-400' : 'text-red-400';
 
+		// Check if this is a forfeit (opponent disconnected)
+		// In forfeit cases, the backend already recorded the result
+		const isForfeit = data.reason === 'opponent_disconnected';
+
 		// Show overlay with result
 		if (savingOverlay) {
 			const spinner = savingOverlay.querySelector('.loading-spinner');
@@ -1246,21 +1268,44 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 			if (spinner) spinner.classList.add('hidden');
 			if (text) text.innerHTML = `
 				<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
-				<div class="text-white/80">${t('game.savingResult')}</div>
+				<div class="text-white/80">${isForfeit ? t('game.opponentDisconnected') : t('game.savingResult')}</div>
 			`;
 			savingOverlay.classList.remove('hidden');
 		}
 
-		try {
-			const score1 = data.state?.score?.player1 ?? gameState.score.player1;
-			const score2 = data.state?.score?.player2 ?? gameState.score.player2;
+		// Only save result if not a forfeit (forfeit results are saved by backend)
+		if (!isForfeit) {
+			try {
+				const score1 = data.state?.score?.player1 ?? gameState.score.player1;
+				const score2 = data.state?.score?.player2 ?? gameState.score.player2;
 
-			const result = await api.post(`/tournaments/${tournamentId}/match/${matchId}/result`, {
-				player1Score: score1,
-				player2Score: score2
-			});
+				const result = await api.post(`/tournaments/${tournamentId}/match/${matchId}/result`, {
+					player1Score: score1,
+					player2Score: score2
+				});
 
-			// Show return instructions regardless of save result (other player may have saved already)
+				// Show return instructions regardless of save result (other player may have saved already)
+				if (savingOverlay) {
+					const text = savingOverlay.querySelector('p');
+					if (text) text.innerHTML = `
+						<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
+						<div class="text-white/80">${t('game.pressSpace')}</div>
+					`;
+				}
+				resultSaved = true;
+			} catch (err) {
+				console.error('Error saving result:', err);
+				// Still show return instructions
+				if (savingOverlay) {
+					const text = savingOverlay.querySelector('p');
+					if (text) text.innerHTML = `
+						<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
+						<div class="text-white/80">${t('game.pressSpace')}</div>
+					`;
+				}
+			}
+		} else {
+			// Forfeit - result already saved, show return instructions directly
 			if (savingOverlay) {
 				const text = savingOverlay.querySelector('p');
 				if (text) text.innerHTML = `
@@ -1269,16 +1314,6 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
 				`;
 			}
 			resultSaved = true;
-		} catch (err) {
-			console.error('Error saving result:', err);
-			// Still show return instructions
-			if (savingOverlay) {
-				const text = savingOverlay.querySelector('p');
-				if (text) text.innerHTML = `
-					<div class="text-3xl font-game ${resultColor} mb-4">${resultText}</div>
-					<div class="text-white/80">${t('game.pressSpace')}</div>
-				`;
-			}
 		}
 	});
 

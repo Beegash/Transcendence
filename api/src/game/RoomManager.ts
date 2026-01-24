@@ -19,6 +19,7 @@ import {
 import type { Ball, Player, GameRoom, GameState, ClientGameState } from './types.js';
 import { aiPlayer } from './AIPlayer.js';
 import { recordMatch } from '../services/stats.js';
+import { recordTournamentForfeit } from '../services/tournament.js';
 
 class RoomManager {
 	private rooms: Map<string, GameRoom> = new Map();
@@ -60,8 +61,20 @@ class RoomManager {
 
 	/**
 	 * Create new room for human vs human
+	 * @param tournamentId - Optional tournament ID for tournament matches
+	 * @param tournamentMatchId - Optional match ID for tournament matches
 	 */
-	createRoom(ws: WebSocket | null, playerId: string, userId?: number, username?: string, customRoomId?: string, forceSlot?: 1 | 2, invitedUserId?: number): GameRoom {
+	createRoom(
+		ws: WebSocket | null,
+		playerId: string,
+		userId?: number,
+		username?: string,
+		customRoomId?: string,
+		forceSlot?: 1 | 2,
+		invitedUserId?: number,
+		tournamentId?: number,
+		tournamentMatchId?: number
+	): GameRoom {
 		const roomId = customRoomId || this.generateRoomId();
 
 		const player: Player = {
@@ -73,6 +86,8 @@ class RoomManager {
 			ready: false,
 			isAI: false,
 		};
+
+		const isTournament = tournamentId !== undefined && tournamentMatchId !== undefined;
 
 		const room: GameRoom = {
 			id: roomId,
@@ -88,10 +103,14 @@ class RoomManager {
 			createdAt: new Date(),
 			isVsAI: false,
 			invitedUserId,
+			isTournament,
+			tournamentId,
+			tournamentMatchId,
 		};
 
 		this.rooms.set(roomId, room);
-		console.log(`Room ${roomId} created (Slot: ${forceSlot || 1})${invitedUserId ? ` [Private: invited user ${invitedUserId}]` : ''}`);
+		const tournamentInfo = isTournament ? ` [Tournament: ${tournamentId}, Match: ${tournamentMatchId}]` : '';
+		console.log(`Room ${roomId} created (Slot: ${forceSlot || 1})${invitedUserId ? ` [Private: invited user ${invitedUserId}]` : ''}${tournamentInfo}`);
 		return room;
 	}
 
@@ -133,6 +152,7 @@ class RoomManager {
 			aiLoop: null,
 			createdAt: new Date(),
 			isVsAI: true,
+			isTournament: false, // AI games are never tournament matches
 		};
 
 		this.rooms.set(roomId, room);
@@ -389,38 +409,49 @@ class RoomManager {
 		}
 
 		// Record match result in database
-		try {
-			const player1Id = room.player1?.userId || null;
-			const player2Id = room.player2?.userId || null;
-			const player1Score = room.state.score.player1;
-			const player2Score = room.state.score.player2;
-			const player1Alias = room.player1?.username;
-			const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
+		// IMPORTANT: Tournament matches are handled separately by the tournament service
+		// Recording them here would cause duplicate entries
+		if (!room.isTournament) {
+			try {
+				const player1Id = room.player1?.userId || null;
+				const player2Id = room.player2?.userId || null;
+				const player1Score = room.state.score.player1;
+				const player2Score = room.state.score.player2;
+				const player1Alias = room.player1?.username;
+				const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
 
-			// Determine match type
-			const matchType = room.isVsAI ? 'ai' : 'casual';
+				// Determine match type correctly
+				const matchType = room.isVsAI ? 'ai' : 'casual';
 
-			// Only record if at least one player is a real user
-			if (player1Id || player2Id) {
-				recordMatch(
-					player1Id,
-					player2Id,
-					player1Score,
-					player2Score,
-					matchType,
-					player1Alias,
-					player2Alias
-				);
-				console.log(`Match recorded: P1(${player1Id}) ${player1Score} - ${player2Score} P2(${player2Id}) [${matchType}]`);
+				// Only record if at least one player is a real user
+				if (player1Id || player2Id) {
+					recordMatch(
+						player1Id,
+						player2Id,
+						player1Score,
+						player2Score,
+						matchType,
+						player1Alias,
+						player2Alias
+					);
+					console.log(`Match recorded: P1(${player1Id}) ${player1Score} - ${player2Score} P2(${player2Id}) [${matchType}]`);
+				}
+			} catch (error) {
+				console.error('Failed to record match:', error);
 			}
-		} catch (error) {
-			console.error('Failed to record match:', error);
+		} else {
+			console.log(`Tournament match ended: Room ${room.id}, Tournament ${room.tournamentId}, Match ${room.tournamentMatchId} - Winner: Player ${winner}`);
+			// Tournament match result will be recorded by the frontend calling the tournament API
 		}
 
 		this.broadcast(room, {
 			type: 'game_over',
 			winner,
 			state: this.getClientState(room),
+			// Include tournament info for frontend to handle
+			isTournament: room.isTournament,
+			tournamentId: room.tournamentId,
+			tournamentMatchId: room.tournamentMatchId,
 		});
 
 		// Cleanup after 30s
@@ -512,31 +543,48 @@ class RoomManager {
 					room.state.status = 'finished';
 					room.state.winner = winner as 1 | 2;
 
-					// Record match result (disconnecting player forfeits - 5-0)
-					try {
-						const player1Id = room.player1?.userId || null;
-						const player2Id = room.player2?.userId || null;
-						const player1Score = room.state.score.player1;
-						const player2Score = room.state.score.player2;
-						const player1Alias = room.player1?.username;
-						const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
-						const matchType = room.isVsAI ? 'ai' : 'casual';
-
-						// Only record if at least one player is a real user
-						if (player1Id || player2Id) {
-							recordMatch(
-								player1Id,
-								player2Id,
-								player1Score,
-								player2Score,
-								matchType,
-								player1Alias,
-								player2Alias
-							);
-							console.log(`Match recorded (forfeit): P1(${player1Id}) ${player1Score} - ${player2Score} P2(${player2Id}) [${matchType}]`);
+					// Handle forfeit based on match type
+					if (room.isTournament && room.tournamentMatchId) {
+						// Tournament match: Record forfeit through tournament service
+						try {
+							const player1Score = room.state.score.player1;
+							const player2Score = room.state.score.player2;
+							const success = recordTournamentForfeit(room.tournamentMatchId, player1Score, player2Score);
+							if (success) {
+								console.log(`Tournament forfeit recorded: Match ${room.tournamentMatchId}, Winner: Player ${winner}`);
+							} else {
+								console.error(`Failed to record tournament forfeit for match ${room.tournamentMatchId}`);
+							}
+						} catch (error) {
+							console.error('Failed to record tournament forfeit:', error);
 						}
-					} catch (error) {
-						console.error('Failed to record match on disconnect:', error);
+					} else if (!room.isTournament) {
+						// Casual/AI match: Record through stats service
+						try {
+							const player1Id = room.player1?.userId || null;
+							const player2Id = room.player2?.userId || null;
+							const player1Score = room.state.score.player1;
+							const player2Score = room.state.score.player2;
+							const player1Alias = room.player1?.username;
+							const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
+							const matchType = room.isVsAI ? 'ai' : 'casual';
+
+							// Only record if at least one player is a real user
+							if (player1Id || player2Id) {
+								recordMatch(
+									player1Id,
+									player2Id,
+									player1Score,
+									player2Score,
+									matchType,
+									player1Alias,
+									player2Alias
+								);
+								console.log(`Match recorded (forfeit): P1(${player1Id}) ${player1Score} - ${player2Score} P2(${player2Id}) [${matchType}]`);
+							}
+						} catch (error) {
+							console.error('Failed to record match on disconnect:', error);
+						}
 					}
 
 					// Notify remaining player they won
@@ -546,6 +594,9 @@ class RoomManager {
 							winner: winner,
 							reason: 'opponent_disconnected',
 							state: this.getClientState(room),
+							isTournament: room.isTournament,
+							tournamentId: room.tournamentId,
+							tournamentMatchId: room.tournamentMatchId,
 						}));
 					}
 

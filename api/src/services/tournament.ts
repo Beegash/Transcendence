@@ -366,6 +366,20 @@ export function recordMatchResult(
 }
 
 /**
+ * Record tournament match forfeit (when a player disconnects)
+ * This is called from RoomManager when a player disconnects during a tournament match
+ */
+export function recordTournamentForfeit(
+	matchId: number,
+	player1Score: number,
+	player2Score: number
+): boolean {
+	// Use the same logic as recordMatchResult
+	// The scores should already reflect the forfeit (WINNING_SCORE-0)
+	return recordMatchResult(matchId, player1Score, player2Score);
+}
+
+/**
  * Advance winner to next round
  */
 function advanceWinner(
