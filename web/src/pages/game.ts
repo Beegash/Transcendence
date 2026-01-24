@@ -258,7 +258,7 @@ function startLocalGame(content: HTMLElement): void {
       </div>
       
       <p class="text-center text-white/60 text-sm mt-4">
-        Player 1: W/S • Player 2: ↑/↓ • Press SPACE to start
+        ${t('game.localControls')}
       </p>
     </div>
   `;
@@ -525,9 +525,9 @@ function initLocalGame(): void {
 			ctx.fillText(`Player ${winner} Wins!`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 			ctx.font = '16px Inter, sans-serif';
 			ctx.fillStyle = 'rgba(255,255,255,0.7)';
-			ctx.fillText('Press SPACE to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
+			ctx.fillText(t('game.pressSpaceRestart'), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
 		} else if (!gameRunning) {
-			ctx.fillText('Press SPACE to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+			ctx.fillText(t('game.pressSpace'), CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
 		}
 	}
 
