@@ -317,7 +317,7 @@ async function loadLeaderboard(): Promise<void> {
         ${leaderboard.map((p, i) => `
           <a href="/profile/${p.user_id}" data-link class="flex items-center gap-3 p-2 rounded-lg ${i < 3 ? 'bg-pong-darker' : ''} hover:bg-white/5 transition-colors">
             <span class="font-game text-lg w-8 ${getRankColor(i + 1)}">${getRankDisplay(i + 1)}</span>
-            <img src="${p.avatar_url}" alt="" class="w-8 h-8 rounded-full">
+            <img src="${p.avatar_url || '/default-avatar.png'}" alt="" class="w-8 h-8 rounded-full">
             <div class="flex-1">
               <div class="text-white text-sm">${p.display_name}</div>
               <div class="text-white/60 text-xs">${p.wins}W - ${p.losses}L</div>

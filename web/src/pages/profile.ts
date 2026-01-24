@@ -73,7 +73,7 @@ export async function renderProfilePage(): Promise<void> {
             <div class="w-32 h-32 rounded-full bg-pong-primary/20 flex items-center justify-center border-4 border-pong-primary overflow-hidden">
               ${user.avatarUrl && user.avatarUrl !== '/default-avatar.png'
       ? `<img src="${user.avatarUrl}" alt="${user.displayName}" class="w-full h-full object-cover" />`
-      : `<span class="font-game text-4xl text-pong-primary">${user.displayName?.charAt(0).toUpperCase() || 'U'}</span>`
+      : `<img src="/default-avatar.png" alt="${user.displayName}" class="w-full h-full object-cover" />`
     }
             </div>
             ${isOwnProfile ? `
@@ -102,7 +102,7 @@ export async function renderProfilePage(): Promise<void> {
             <p class="text-white/70 mb-4">@${user.username}${isOwnProfile ? ` • ${user.email}` : ''}</p>
             <div class="flex flex-wrap justify-center md:justify-start gap-2">
               <span class="badge ${(isOwnProfile || user.isOnline) ? 'badge-online' : 'badge-offline'}">${(isOwnProfile || user.isOnline) ? t('profile.online') : t('profile.offline')}</span>
-              ${user.language ? `<span class="text-white/50">Language: ${user.language.toUpperCase()}</span>` : ''}
+              ${user.language ? `<span class="text-white/50"> ${user.language.toUpperCase()}</span>` : ''}
             </div>
           </div>
           
@@ -354,7 +354,7 @@ async function loadFriendsList(userId: number): Promise<void> {
         <div class="w-10 h-10 rounded-full bg-pong-primary/20 flex items-center justify-center overflow-hidden">
           ${friend.avatar_url && friend.avatar_url !== '/default-avatar.png'
       ? `<img src="${friend.avatar_url}" alt="${friend.display_name}" class="w-full h-full object-cover" />`
-      : `<span class="text-pong-primary">${(friend.display_name as string)?.charAt(0).toUpperCase() || 'U'}</span>`
+      : `<img src="/default-avatar.png" alt="${friend.display_name}" class="w-full h-full object-cover" />`
     }
         </div>
         <div>

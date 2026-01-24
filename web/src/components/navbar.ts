@@ -172,7 +172,7 @@ export function renderNavbar(): void {
                     <div class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center border-2 border-pong-primary overflow-hidden">
                       ${user?.avatarUrl && user.avatarUrl !== '/default-avatar.png'
         ? `<img src="${user.avatarUrl}" alt="${user.displayName}" class="w-full h-full object-cover" />`
-        : `<span class="text-pong-primary font-semibold text-sm">${user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>`
+        : `<img src="/default-avatar.png" alt="${user.displayName}" class="w-full h-full object-cover" />`
       }
                     </div>
                     <span class="text-sm text-white">${user?.displayName || user?.username || 'User'}</span>
@@ -198,7 +198,7 @@ export function renderNavbar(): void {
               <a href="/profile" data-link class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center border-2 border-pong-primary overflow-hidden">
                 ${user?.avatarUrl && user.avatarUrl !== '/default-avatar.png'
         ? `<img src="${user.avatarUrl}" alt="${user.displayName}" class="w-full h-full object-cover" />`
-        : `<span class="text-pong-primary font-semibold text-sm">${user?.displayName?.charAt(0).toUpperCase() || 'U'}</span>`
+        : `<img src="/default-avatar.png" alt="${user.displayName}" class="w-full h-full object-cover" />`
       }
               </a>
             ` : `
@@ -355,7 +355,7 @@ async function fetchNotifications(): Promise<void> {
               <div class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                 ${n.senderAvatar && n.senderAvatar !== '/default-avatar.png'
             ? `<img src="${n.senderAvatar}" alt="" class="w-full h-full object-cover" />`
-            : `<span class="text-pong-primary text-xs font-bold">${n.senderName?.charAt(0).toUpperCase() || 'S'}</span>`
+            : `<img src="/default-avatar.png" alt="" class="w-full h-full object-cover" />`
           }
               </div>
               <div class="flex-1 min-w-0">
