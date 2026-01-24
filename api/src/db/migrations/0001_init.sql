@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_seen_at TEXT,
     
     -- Preferences
-    language TEXT DEFAULT 'en' CHECK(language IN ('en', 'tr', 'fr')),
+    language TEXT DEFAULT 'en' CHECK(language IN ('en', 'tr', 'de')),
     
     -- GDPR compliance
     is_anonymized BOOLEAN DEFAULT FALSE,

@@ -79,12 +79,21 @@ export async function renderProfilePage(): Promise<void> {
     }
             </div>
             ${isOwnProfile ? `
-              <button id="avatar-upload-btn" class="absolute bottom-0 right-0 bg-pong-primary p-2 rounded-full hover:bg-pong-secondary transition-colors">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-              </button>
+              <div class="absolute bottom-0 right-0 flex gap-1">
+                <button id="avatar-upload-btn" class="bg-pong-primary p-2 rounded-full hover:bg-pong-secondary transition-colors" title="${t('profile.changeAvatar')}">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                </button>
+                ${user.avatarUrl && user.avatarUrl !== '/default-avatar.png' ? `
+                  <button id="avatar-remove-btn" class="bg-red-500 p-2 rounded-full hover:bg-red-600 transition-colors" title="${t('profile.removeAvatar')}">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                ` : ''}
+              </div>
               <input type="file" id="avatar-input" class="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" />
             ` : ''}
           </div>
@@ -211,6 +220,8 @@ function setupAvatarUpload(userId: number): void {
           if (avatarContainer) {
             avatarContainer.innerHTML = `<img src="${result.data.avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />`;
           }
+          // Reload page to show remove button
+          renderProfilePage();
         } else {
           alert(result.error || 'Failed to upload avatar');
         }
@@ -220,6 +231,28 @@ function setupAvatarUpload(userId: number): void {
       } finally {
         // Reset input to allow selecting the same file again
         avatarInput.value = '';
+      }
+    });
+  }
+
+  // Setup avatar remove functionality
+  const removeBtn = document.getElementById('avatar-remove-btn');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', async () => {
+      if (!confirm(t('profile.removeAvatar') + '?')) return;
+
+      try {
+        const result = await api.delete(`/users/${userId}/avatar`);
+
+        if (result.success) {
+          // Reload page to update UI
+          renderProfilePage();
+        } else {
+          alert(result.error || 'Failed to remove avatar');
+        }
+      } catch (err) {
+        console.error('Avatar remove error:', err);
+        alert('Failed to remove avatar');
       }
     });
   }

@@ -55,6 +55,13 @@ class AuthStore {
 				this.state.token = token;
 				this.state.user = JSON.parse(userJson);
 				this.state.isAuthenticated = true;
+
+				// Apply user's saved language preference
+				if (this.state.user?.language) {
+					import('../i18n').then(({ i18n }) => {
+						i18n.setLanguage(this.state.user!.language as 'en' | 'tr' | 'de');
+					});
+				}
 			}
 		} catch (error) {
 			console.error('Failed to load auth state:', error);
@@ -112,6 +119,12 @@ class AuthStore {
 			this.state.isAuthenticated = true;
 			this.saveToStorage();
 			this.notifyListeners();
+
+			// Apply user's saved language preference
+			if (result.data.user.language) {
+				const { i18n } = await import('../i18n');
+				i18n.setLanguage(result.data.user.language as 'en' | 'tr' | 'de');
+			}
 
 			// Connect to presence socket for online status tracking
 			this.connectPresence();
@@ -188,6 +201,16 @@ class AuthStore {
 	 */
 	isAuthenticated(): boolean {
 		return this.state.isAuthenticated;
+	}
+
+	/**
+	 * Update user's language preference in state and localStorage
+	 */
+	updateUserLanguage(language: string): void {
+		if (this.state.user) {
+			this.state.user.language = language;
+			this.saveToStorage();
+		}
 	}
 
 	/**

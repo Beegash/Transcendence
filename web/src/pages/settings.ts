@@ -28,13 +28,18 @@ export function renderSettingsPage(): void {
       <!-- Language Settings -->
       <div class="card mb-6">
         <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.language')}</h2>
-        <select id="settings-language" class="input">
-          ${i18n.getAvailableLanguages().map(lang => `
-            <option value="${lang.code}" ${i18n.getLanguage() === lang.code ? 'selected' : ''}>
-              ${lang.name}
-            </option>
-          `).join('')}
-        </select>
+        <p class="text-white/60 text-sm mb-4">${t('settings.languageHint') || 'This will be your default language when you log in.'}</p>
+        <div class="flex gap-2">
+          <select id="settings-language" class="input flex-1">
+            ${i18n.getAvailableLanguages().map(lang => `
+              <option value="${lang.code}" ${auth.getUser()?.language === lang.code ? 'selected' : ''}>
+                ${lang.name}
+              </option>
+            `).join('')}
+          </select>
+          <button id="save-language-btn" class="btn btn-primary">${t('common.save')}</button>
+        </div>
+        <div id="language-success" class="text-green-400 text-sm mt-2 hidden"></div>
       </div>
       
       <!-- Username Change -->
@@ -107,11 +112,43 @@ export function renderSettingsPage(): void {
     </div>
   `;
 
-  // Language change
+  // Language save - only saves to profile when Save button is clicked
   const langSelect = document.getElementById('settings-language') as HTMLSelectElement;
-  langSelect?.addEventListener('change', (e) => {
-    const target = e.target as HTMLSelectElement;
-    i18n.setLanguage(target.value as Language);
+  const saveLangBtn = document.getElementById('save-language-btn') as HTMLButtonElement;
+  const langSuccess = document.getElementById('language-success')!;
+
+  saveLangBtn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const newLang = langSelect.value as Language;
+    langSuccess.classList.add('hidden');
+    langSuccess.textContent = '';
+    langSuccess.classList.remove('text-red-400');
+
+    // Save to user profile in backend
+    if (auth.isAuthenticated()) {
+      saveLangBtn.disabled = true;
+      saveLangBtn.textContent = t('common.loading') || 'Saving...';
+
+      try {
+        const result = await api.put(`/users/${auth.getUser()!.id}`, { language: newLang });
+
+        if (result.success) {
+          auth.updateUserLanguage(newLang);
+          i18n.setLanguage(newLang);
+        } else {
+          saveLangBtn.disabled = false;
+          saveLangBtn.textContent = t('common.save') || 'Save';
+          console.error('Failed to save language preference:', result.error);
+          langSuccess.textContent = t('errors.networkError') || 'Failed to save';
+          langSuccess.classList.remove('hidden');
+          langSuccess.classList.add('text-red-400');
+        }
+      } catch (err) {
+        saveLangBtn.disabled = false;
+        saveLangBtn.textContent = t('common.save') || 'Save';
+        console.error('Error saving language:', err);
+      }
+    }
   });
 
   // Username change

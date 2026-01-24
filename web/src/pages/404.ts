@@ -6,19 +6,19 @@ import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';
 
 export function renderNotFoundPage(): void {
-	renderNavbar();
+  renderNavbar();
 
-	const app = document.getElementById('app');
-	if (!app) return;
+  const app = document.getElementById('app');
+  if (!app) return;
 
-	let content = document.getElementById('page-content');
-	if (!content) {
-		content = document.createElement('div');
-		content.id = 'page-content';
-		app.appendChild(content);
-	}
+  let content = document.getElementById('page-content');
+  if (!content) {
+    content = document.createElement('div');
+    content.id = 'page-content';
+    app.appendChild(content);
+  }
 
-	content.innerHTML = `
+  content.innerHTML = `
     <div class="min-h-[80vh] flex items-center justify-center px-4">
       <div class="text-center">
         <div class="font-game text-8xl text-pong-primary mb-4 glow-text">404</div>

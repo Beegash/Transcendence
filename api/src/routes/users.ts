@@ -570,7 +570,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 	/**
 	 * DELETE /:id/avatar
-	 * Reset avatar to default
+	 * Reset avatar to default and delete old file from disk (GDPR compliance)
 	 */
 	fastify.delete<{ Params: { id: string } }>(
 		'/:id/avatar',
@@ -583,11 +583,32 @@ export default async function userRoutes(fastify: FastifyInstance) {
 			}
 
 			try {
+				// Get current avatar URL
+				const user = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(userId) as { avatar_url: string } | undefined;
+
+				// Delete old avatar file if it exists and is not the default
+				if (user?.avatar_url && user.avatar_url !== '/default-avatar.png') {
+					const fs = await import('fs/promises');
+					const path = await import('path');
+					const filePath = path.join(process.cwd(), user.avatar_url);
+
+					try {
+						await fs.unlink(filePath);
+						fastify.log.info(`Deleted avatar file: ${filePath}`);
+					} catch (unlinkError: any) {
+						// File might not exist, log but don't fail
+						if (unlinkError.code !== 'ENOENT') {
+							fastify.log.warn(`Could not delete avatar file: ${filePath}`, unlinkError);
+						}
+					}
+				}
+
+				// Update database to use default avatar
 				db.prepare('UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('/default-avatar.png', userId);
-				return reply.send({ message: 'Avatar reset to default' });
+				return reply.send({ message: 'Avatar removed successfully' });
 			} catch (error) {
 				fastify.log.error(error);
-				return reply.status(500).send({ error: 'Failed to reset avatar' });
+				return reply.status(500).send({ error: 'Failed to remove avatar' });
 			}
 		}
 	);

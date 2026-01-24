@@ -433,7 +433,7 @@ function formatRelativeTime(dateStr: string): string {
   // SQLite returns UTC timestamps without timezone info (e.g., "2024-01-20 12:00:00")
   // We need to explicitly treat it as UTC by appending 'Z' or converting to ISO format
   let date: Date;
-  
+
   // If dateStr doesn't have timezone info, append 'Z' to treat it as UTC
   if (dateStr && !dateStr.includes('Z') && !dateStr.includes('+')) {
     // Convert SQLite format to ISO: "2024-01-20 12:00:00" -> "2024-01-20T12:00:00Z"
@@ -442,7 +442,7 @@ function formatRelativeTime(dateStr: string): string {
   } else {
     date = new Date(dateStr);
   }
-  
+
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
@@ -491,11 +491,11 @@ async function handleGameInviteAction(e: Event, action: 'accept' | 'reject'): Pr
     if (action === 'accept' && notifDataEncoded) {
       // Decode the URL-encoded data first
       const notifData = decodeURIComponent(notifDataEncoded);
-      
+
       // Parse notification data (can be JSON or plain roomId for backwards compatibility)
       let roomId: string;
       let inviterId: number | undefined;
-      
+
       try {
         const parsed = JSON.parse(notifData);
         roomId = parsed.roomId;
@@ -504,7 +504,7 @@ async function handleGameInviteAction(e: Event, action: 'accept' | 'reject'): Pr
         // Backwards compatibility: if it's not JSON, treat as plain roomId
         roomId = notifData;
       }
-      
+
       // 2. Navigate to game with inviterId (the person who invited us)
       let url = `/game?mode=invite&roomId=${roomId}`;
       if (inviterId) {
