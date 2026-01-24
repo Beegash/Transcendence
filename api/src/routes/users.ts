@@ -265,10 +265,30 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				.prepare(
 					`SELECT m.id, m.player1_id, m.player2_id, m.player1_score, m.player2_score, 
                   m.winner_id, m.match_type, m.ended_at,
-                  COALESCE(u1.username, 'Deleted User') as player1_username, 
-                  COALESCE(u1.display_name, 'Deleted User') as player1_display_name,
-                  COALESCE(u2.username, 'Deleted User') as player2_username, 
-                  COALESCE(u2.display_name, 'Deleted User') as player2_display_name
+                  CASE 
+                    WHEN m.player1_id IS NULL AND m.player1_alias IS NOT NULL THEN 
+                      CASE WHEN m.player1_alias LIKE 'guest_%' THEN 'Guest' ELSE m.player1_alias END
+                    WHEN u1.username IS NOT NULL THEN u1.username
+                    ELSE 'Deleted User'
+                  END as player1_username,
+                  CASE 
+                    WHEN m.player1_id IS NULL AND m.player1_alias IS NOT NULL THEN 
+                      CASE WHEN m.player1_alias LIKE 'guest_%' THEN 'Guest' ELSE m.player1_alias END
+                    WHEN u1.display_name IS NOT NULL THEN u1.display_name
+                    ELSE 'Deleted User' 
+                  END as player1_display_name,
+                  CASE 
+                    WHEN m.player2_id IS NULL AND m.player2_alias IS NOT NULL THEN 
+                      CASE WHEN m.player2_alias LIKE 'guest_%' THEN 'Guest' ELSE m.player2_alias END
+                    WHEN u2.username IS NOT NULL THEN u2.username
+                    ELSE 'Deleted User'
+                  END as player2_username,
+                  CASE 
+                    WHEN m.player2_id IS NULL AND m.player2_alias IS NOT NULL THEN 
+                      CASE WHEN m.player2_alias LIKE 'guest_%' THEN 'Guest' ELSE m.player2_alias END
+                    WHEN u2.display_name IS NOT NULL THEN u2.display_name
+                    ELSE 'Deleted User'
+                  END as player2_display_name
            FROM matches m
            LEFT JOIN users u1 ON m.player1_id = u1.id
            LEFT JOIN users u2 ON m.player2_id = u2.id

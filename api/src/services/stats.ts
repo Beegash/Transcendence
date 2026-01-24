@@ -97,8 +97,18 @@ export function getMatchHistory(userId: number, limit = 20): MatchHistory[] {
     SELECT 
       m.id,
       CASE 
-        WHEN m.player1_id = ? THEN COALESCE(u2.display_name, u2.username, 'Deleted User')
-        ELSE COALESCE(u1.display_name, u1.username, 'Deleted User')
+        WHEN m.player1_id = ? THEN 
+          CASE 
+            WHEN m.player2_id IS NULL AND m.player2_alias IS NOT NULL THEN 
+              CASE WHEN m.player2_alias LIKE 'guest_%' THEN 'Guest' ELSE m.player2_alias END
+            ELSE COALESCE(u2.display_name, u2.username, 'Deleted User')
+          END
+        ELSE 
+          CASE 
+            WHEN m.player1_id IS NULL AND m.player1_alias IS NOT NULL THEN 
+              CASE WHEN m.player1_alias LIKE 'guest_%' THEN 'Guest' ELSE m.player1_alias END
+            ELSE COALESCE(u1.display_name, u1.username, 'Deleted User')
+          END
       END as opponent_name,
       CASE 
         WHEN m.player1_id = ? THEN m.player1_score

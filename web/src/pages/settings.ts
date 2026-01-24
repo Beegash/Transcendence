@@ -70,6 +70,12 @@ export function renderSettingsPage(): void {
       <div class="card mb-6">
         <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.privacy')}</h2>
         <div class="space-y-4">
+          <button id="anonymize-account-btn" class="btn btn-secondary w-full flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+            </svg>
+            ${t('settings.anonymizeAccount') || 'Anonymize Account'}
+          </button>
           <button id="export-data-btn" class="btn btn-secondary w-full flex items-center justify-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -88,6 +94,27 @@ export function renderSettingsPage(): void {
         <button id="delete-account-btn" class="btn btn-danger w-full">
           ${t('settings.deleteAccount')}
         </button>
+      </div>
+
+      <!-- Anonymize Confirmation Modal -->
+      <div id="anonymize-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+        <div class="card max-w-md mx-4">
+          <h3 class="font-game text-xl text-yellow-400 mb-4">Anonymize Account</h3>
+          <p class="text-white/80 mb-4">
+            This will remove all your personal data (identity, email) but keep your game statistics under an anonymous name.
+          </p>
+          <p class="text-white/80 mb-4">
+            You will NOT be able to log in to this account again.
+          </p>
+          <p class="text-white/80 mb-2">
+            Type <strong class="text-white">ANONYMIZE</strong> to confirm:
+          </p>
+          <input type="text" id="anonymize-confirm-input" class="input w-full mb-4" placeholder="Type ANONYMIZE">
+          <div class="flex gap-4">
+            <button id="cancel-anonymize-btn" class="btn btn-secondary flex-1">${t('common.cancel')}</button>
+            <button id="confirm-anonymize-btn" class="btn btn-warning flex-1" disabled>${t('common.confirm') || 'Confirm'}</button>
+          </div>
+        </div>
       </div>
       
       <!-- Delete Confirmation Modal -->
@@ -271,6 +298,47 @@ export function renderSettingsPage(): void {
     changePasswordBtn.textContent = t('common.save') || 'Save';
   });
 
+  // Anonymize Account Logic
+  const anonymizeBtn = document.getElementById('anonymize-account-btn');
+  const anonymizeModal = document.getElementById('anonymize-modal');
+  const cancelAnonymizeBtn = document.getElementById('cancel-anonymize-btn');
+  const confirmAnonymizeBtn = document.getElementById('confirm-anonymize-btn') as HTMLButtonElement;
+  const anonymizeConfirmInput = document.getElementById('anonymize-confirm-input') as HTMLInputElement;
+
+  anonymizeBtn?.addEventListener('click', () => {
+    anonymizeModal?.classList.remove('hidden');
+  });
+
+  cancelAnonymizeBtn?.addEventListener('click', () => {
+    anonymizeModal?.classList.add('hidden');
+    if (anonymizeConfirmInput) anonymizeConfirmInput.value = '';
+  });
+
+  anonymizeConfirmInput?.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (confirmAnonymizeBtn) {
+      confirmAnonymizeBtn.disabled = target.value !== 'ANONYMIZE';
+    }
+  });
+
+  confirmAnonymizeBtn?.addEventListener('click', async () => {
+    confirmAnonymizeBtn.disabled = true;
+    confirmAnonymizeBtn.textContent = 'Processing...';
+
+    const result = await api.post('/auth/anonymize', {});
+
+    if (result.success) {
+      await auth.logout();
+      alert('Account anonymized successfully. You have been logged out.');
+      router.navigate('/');
+    } else {
+      alert(result.error || 'Failed to anonymize account');
+      confirmAnonymizeBtn.disabled = false;
+      confirmAnonymizeBtn.textContent = 'Confirm';
+    }
+    anonymizeModal?.classList.add('hidden');
+  });
+
   // Delete account modal
   const deleteBtn = document.getElementById('delete-account-btn');
   const deleteModal = document.getElementById('delete-modal');
@@ -344,3 +412,4 @@ export function renderSettingsPage(): void {
     btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> ${t('settings.exportData')}`;
   });
 }
+

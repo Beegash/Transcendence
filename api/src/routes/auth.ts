@@ -277,6 +277,69 @@ export default async function authRoutes(fastify: FastifyInstance) {
 	});
 
 	/**
+	 * POST /anonymize
+	 * Anonymize user data (GDPR Right to be Forgotten - Soft Delete)
+	 * Retains stats but removes PII
+	 */
+	fastify.post('/anonymize', { preHandler: authMiddleware }, async (request, reply) => {
+		if (!request.user) {
+			return reply.status(401).send({ error: 'Not authenticated' });
+		}
+
+		const userId = request.user.userId;
+
+		try {
+			const randomId = crypto.randomBytes(4).toString('hex');
+			const anonymousName = `anonymous_${randomId}`;
+			const anonymousEmail = `${anonymousName}@transcendence.local`;
+
+			// 1. Log action
+			db.prepare(`
+				INSERT INTO audit_log (user_id, action, details)
+				VALUES (?, 'account_anonymize', '{"note": "User requested anonymization"}')
+			`).run(userId);
+
+			// 2. Delete sessions & notifications & friends
+			db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+			db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
+			db.prepare('DELETE FROM friendships WHERE user_id = ? OR friend_id = ?').run(userId, userId);
+
+			// 3. Handle matches/tournaments cleanup if needed (stats are kept, but maybe active tournaments need to know?)
+			// For now, we just anonymize the user record.
+			// Ideally, we should forfeit active matches, but per simple requirement, we focus on user record.
+			handleUserDeletion(userId, anonymousName); // Re-using deletion handler to cleanup active tournaments
+
+			// 4. Anonymize user record
+			db.prepare(`
+				UPDATE users 
+				SET email = ?,
+					username = ?,
+					display_name = ?,
+					password_hash = NULL,
+					oauth_provider = NULL,
+					oauth_id = NULL,
+					avatar_url = '/default-avatar.png',
+					is_anonymized = TRUE,
+					is_online = FALSE,
+					updated_at = CURRENT_TIMESTAMP
+				WHERE id = ?
+			`).run(anonymousEmail, anonymousName, anonymousName, userId);
+
+			// 5. Clear cookie
+			reply.clearCookie('token', { path: '/' });
+
+			return reply.send({
+				message: 'Account anonymized successfully.',
+				note: 'Your personal data has been removed. Your game stats remain under an anonymous alias.'
+			});
+
+		} catch (error) {
+			fastify.log.error(error);
+			return reply.status(500).send({ error: 'Failed to anonymize account' });
+		}
+	});
+
+	/**
 	 * GET /export-data
 	 * Export all user data (GDPR Right to Data Portability)
 	 */
