@@ -7,8 +7,8 @@ const GDPR_POPUP_ID = 'gdpr-popup-modal';
 
 export function getGdprPopupHtml(): string {
   return `
-    <div id="${GDPR_POPUP_ID}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div class="relative w-full max-w-3xl max-h-[90vh] mx-4 bg-pong-darker rounded-lg border border-pong-light overflow-hidden flex flex-col">
+    <div id="${GDPR_POPUP_ID}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pt-24">
+      <div class="relative w-full max-w-3xl max-h-[85vh] bg-pong-darker rounded-lg border border-pong-light overflow-hidden flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 border-b border-pong-light">
           <h3 class="text-xl text-white font-semibold" id="gdpr-popup-title">${t('gdpr.popup.title')}</h3>
