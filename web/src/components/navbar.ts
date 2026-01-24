@@ -1,6 +1,4 @@
-/**
- * Navbar Component
- */
+// Navbar Component
 
 import { t, i18n, Language } from '../i18n';
 import { auth } from '../utils/auth';

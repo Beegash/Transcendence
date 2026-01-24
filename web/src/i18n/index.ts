@@ -1,6 +1,4 @@
-/**
- * ft_transcendence - Internationalization (i18n)
- */
+// ft_transcendence - Internationalization (i18n)
 
 export type Language = 'en' | 'tr' | 'de';
 
@@ -263,6 +261,48 @@ const en: Translations = {
 		checkboxLabel: 'I have read and agree to the',
 		linkText: 'GDPR',
 		mustAgree: 'You must agree to the GDPR to register',
+		popup: {
+			title: 'Your Data Privacy Rights',
+			intro: 'We are committed to protecting your personal data and respecting your privacy rights under the GDPR. Below are your rights and how you can exercise them:',
+			rightsHeading: 'Your Privacy Rights',
+			rights: {
+				access: {
+					title: 'Right to Access',
+					description: 'You have the right to request a copy of your personal data we hold about you.',
+				},
+				rectification: {
+					title: 'Right to Rectification',
+					description: 'You can request correction of inaccurate or incomplete personal data.',
+				},
+				erasure: {
+					title: 'Right to Erasure (Right to be Forgotten)',
+					description: 'You can request deletion of your personal data when it is no longer necessary for the purposes it was collected.',
+				},
+				restriction: {
+					title: 'Right to Restriction of Processing',
+					description: 'You can request that we limit the processing of your personal data under certain circumstances.',
+				},
+				portability: {
+					title: 'Right to Data Portability',
+					description: 'You can request to receive your personal data in a structured, commonly used format and transfer it to another service.',
+				},
+				object: {
+					title: 'Right to Object',
+					description: 'You can object to the processing of your personal data for direct marketing or other legitimate interests.',
+				},
+				withdraw: {
+					title: 'Right to Withdraw Consent',
+					description: 'You can withdraw your consent at any time where processing is based on consent.',
+				},
+				complain: {
+					title: 'Right to Lodge a Complaint',
+					description: 'You have the right to lodge a complaint with a supervisory authority if you believe your data protection rights have been violated.',
+				},
+			},
+			dataWeCollect: 'Data We Collect',
+			dataList: 'We collect: username, email, game statistics, match history, and profile information. We do not sell your data to third parties.',
+			understand: 'I Understand My Rights',
+		},
 	},
 	time: {
 		justNow: 'just now',
@@ -560,6 +600,47 @@ const tr: Translations = {
 		checkboxLabel: 'Okudum ve kabul ediyorum:',
 		linkText: 'GDPR',
 		mustAgree: 'Kayıt olmak için GDPR\'ı kabul etmelisiniz',
+		popup: {
+			title: 'Veri Gizliliği Haklarınız',
+			intro: 'Kişisel verilerinizi korumaya ve GDPR kapsamındaki gizlilik haklarınıza saygı göstermeye kararlıyız. Aşağıda haklarınız ve bunları nasıl kullanabileceğiniz yer almaktadır:',
+			rightsHeading: 'Gizlilik Haklarınız',
+			rights: {
+				access: {
+					title: 'Erişim Hakkı',
+					description: 'Hakkınızda tuttuğumuz kişisel verilerin bir kopyasını talep etme hakkına sahipsiniz.',
+				},
+				rectification: {
+					title: 'Düzeltme Hakkı',
+					description: 'Yanlış veya eksik kişisel verilerin düzeltilmesini talep edebilirsiniz.',
+				},
+				erasure: {
+					title: 'Silme Hakkı (Unutulma Hakkı)',
+					description: 'Kişisel verilerinizin toplandığı amaçlar için artık gerekli olmadığında silinmesini talep edebilirsiniz.',
+				},
+				restriction: {
+					title: 'İşlemenin Kısıtlanması Hakkı',
+					description: 'Belirli durumlarda kişisel verilerinizin işlenmesini sınırlandırmamızı talep edebilirsiniz.',
+				},
+				portability: {
+					title: 'Veri Taşınabilirliği Hakkı',
+					description: 'Kişisel verilerinizi yapılandırılmış, yaygın kullanılan bir formatta almayı ve başka bir hizmete aktarmayı talep edebilirsiniz.',
+				},
+				object: {
+					title: 'İtiraz Etme Hakkı',
+					description: 'Doğrudan pazarlama veya diğer meşru menfaatler için kişisel verilerinizin işlenmesine itiraz edebilirsiniz.',
+				},
+				withdraw: {
+					title: 'Rızayı Geri Çekme Hakkı',
+					description: 'İşleme rızaya dayalı olduğunda, rızanızı istediğiniz zaman geri çekebilirsiniz.',
+				},
+				complain: {
+					title: 'Şikayette Bulunma Hakkı',
+					description: 'Veri koruma haklarınızın ihlal edildiğine inanıyorsanız, denetim otoritesine şikayette bulunma hakkına sahipsiniz.',
+				},
+			},
+			dataList: 'Topladığımız veriler: kullanıcı adı, e-posta, oyun istatistikleri, maç geçmişi ve profil bilgileri. Verilerinizi üçüncü taraflara satmıyoruz.',
+			understand: 'Haklarımı Anladım',
+		},
 	},
 	time: {
 		justNow: 'şimdi',
@@ -857,6 +938,48 @@ const de: Translations = {
 		checkboxLabel: 'Ich habe gelesen und stimme zu:',
 		linkText: 'GDPR',
 		mustAgree: 'Sie müssen dem GDPR zustimmen, um sich zu registrieren',
+		popup: {
+			title: 'Ihre Datenschutzrechte',
+			intro: 'Wir verpflichten uns, Ihre personenbezogenen Daten zu schützen und Ihre Datenschutzrechte gemäß der DSGVO zu respektieren. Nachfolgend finden Sie Ihre Rechte und wie Sie diese ausüben können:',
+			rightsHeading: 'Ihre Datenschutzrechte',
+			rights: {
+				access: {
+					title: 'Recht auf Auskunft',
+					description: 'Sie haben das Recht, eine Kopie Ihrer personenbezogenen Daten anzufordern, die wir über Sie gespeichert haben.',
+				},
+				rectification: {
+					title: 'Recht auf Berichtigung',
+					description: 'Sie können die Korrektur unrichtiger oder unvollständiger personenbezogener Daten verlangen.',
+				},
+				erasure: {
+					title: 'Recht auf Löschung (Recht auf Vergessenwerden)',
+					description: 'Sie können die Löschung Ihrer personenbezogenen Daten verlangen, wenn diese für die Zwecke, für die sie erhoben wurden, nicht mehr erforderlich sind.',
+				},
+				restriction: {
+					title: 'Recht auf Einschränkung der Verarbeitung',
+					description: 'Sie können unter bestimmten Umständen verlangen, dass wir die Verarbeitung Ihrer personenbezogenen Daten einschränken.',
+				},
+				portability: {
+					title: 'Recht auf Datenübertragbarkeit',
+					description: 'Sie können verlangen, Ihre personenbezogenen Daten in einem strukturierten, gängigen Format zu erhalten und an einen anderen Dienst zu übertragen.',
+				},
+				object: {
+					title: 'Widerspruchsrecht',
+					description: 'Sie können der Verarbeitung Ihrer personenbezogenen Daten für Direktwerbung oder andere berechtigte Interessen widersprechen.',
+				},
+				withdraw: {
+					title: 'Recht auf Widerruf der Einwilligung',
+					description: 'Sie können Ihre Einwilligung jederzeit widerrufen, wenn die Verarbeitung auf Einwilligung basiert.',
+				},
+				complain: {
+					title: 'Recht auf Beschwerde',
+					description: 'Sie haben das Recht, bei einer Aufsichtsbehörde Beschwerde einzulegen, wenn Sie glauben, dass Ihre Datenschutzrechte verletzt wurden.',
+				},
+			},
+			dataWeCollect: 'Daten, die wir sammeln',
+			dataList: 'Wir sammeln: Benutzername, E-Mail, Spielstatistiken, Spielverlauf und Profilinformationen. Wir verkaufen Ihre Daten nicht an Dritte.',
+			understand: 'Ich verstehe meine Rechte',
+		},
 	},
 	time: {
 		justNow: 'gerade eben',

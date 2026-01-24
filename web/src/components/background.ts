@@ -1,7 +1,7 @@
-/**
- * Parallax Cloud Background Component
- * Generates random clouds and handles scroll parallax effects
- */
+
+// Parallax Cloud Background Component
+//Generates random clouds and handles scroll parallax effects
+ 
 
 export function initBackground(): void {
 	const container = document.createElement('div');

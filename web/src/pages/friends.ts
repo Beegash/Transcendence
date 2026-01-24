@@ -1,6 +1,4 @@
-/**
- * Friends and Search Page
- */
+// Friends and Search Page
 
 import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';

@@ -1,6 +1,4 @@
-/**
- * Settings Page
- */
+// Settings Page
 
 import { t, i18n, Language } from '../i18n';
 import { renderNavbar } from '../components/navbar';

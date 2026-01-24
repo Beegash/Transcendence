@@ -1,12 +1,11 @@
-/**
- * Register Page
- */
+// Register Page
 
 import { t } from '../i18n';
+import i18n from '../i18n';
 import { renderNavbar } from '../components/navbar';
 import { auth } from '../utils/auth';
 import { router } from '../utils/router';
-import { getGdprPopupHtml, showGdprPopup, initGdprPopup } from '../components/gdpr-popup';
+import { getGdprPopupHtml, showGdprPopup, initGdprPopup, updateGdprPopupTranslations } from '../components/gdpr-popup';
 
 export function renderRegisterPage(): void {
   // Redirect if already logged in
@@ -97,6 +96,11 @@ export function renderRegisterPage(): void {
   // GDPR link click handler
   const showGdprBtn = document.getElementById('show-gdpr-btn');
   showGdprBtn?.addEventListener('click', showGdprPopup);
+
+  // Subscribe to language changes to update GDPR popup translations
+  i18n.subscribe(() => {
+    updateGdprPopupTranslations();
+  });
 
   // Form submission
   const form = document.getElementById('register-form') as HTMLFormElement;

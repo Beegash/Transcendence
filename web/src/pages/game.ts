@@ -1,7 +1,5 @@
-/**
- * Game Page
- * Pong game with local and online multiplayer modes
- */
+// Game Page
+// Pong game with local and online multiplayer modes
 
 import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';

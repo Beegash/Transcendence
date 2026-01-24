@@ -1,7 +1,5 @@
-/**
- * Tournament Page
- * Dynamic tournament list, creation, joining, and bracket display
- */
+// Tournament Page
+// Dynamic tournament list, creation, joining, and bracket display
 
 import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';

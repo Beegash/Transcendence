@@ -1,10 +1,10 @@
-/**
- * Home Page
- */
+// Home Page
 
 import { t } from '../i18n';
+import i18n from '../i18n';
 import { renderNavbar } from '../components/navbar';
-import { getGdprPopupHtml, showGdprPopup, initGdprPopup } from '../components/gdpr-popup';
+import { getGdprPopupHtml, showGdprPopup, initGdprPopup, updateGdprPopupTranslations } from '../components/gdpr-popup';
+
 
 export function renderHomePage(): void {
   renderNavbar();
@@ -117,4 +117,9 @@ export function renderHomePage(): void {
   // GDPR link click handler
   const gdprLink = document.getElementById('home-gdpr-link');
   gdprLink?.addEventListener('click', showGdprPopup);
+
+  // Subscribe to language changes to update GDPR popup translations
+  i18n.subscribe(() => {
+    updateGdprPopupTranslations();
+  });
 }

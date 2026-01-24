@@ -1,7 +1,5 @@
-/**
- * Dashboard Page
- * User and game statistics with visual charts
- */
+// Dashboard Page
+// User and game statistics with visual charts
 
 import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';
@@ -378,9 +376,8 @@ function getRankDisplay(rank: number): string {
   }
 }
 
-/**
- * Render a pie chart using SVG
- */
+//Render a pie chart using SVG
+
 function renderPieChart(wins: number, losses: number): string {
   const total = wins + losses;
 

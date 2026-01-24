@@ -1,6 +1,4 @@
-/**
- * Profile Page
- */
+// Profile Page
 
 import { t } from '../i18n';
 import { renderNavbar } from '../components/navbar';
