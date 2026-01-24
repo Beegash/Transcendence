@@ -4,6 +4,7 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import crypto from 'crypto';
 import db from '../db/index.js';
 import {
 	hashPassword,
@@ -14,6 +15,7 @@ import {
 	validateUsername,
 } from '../services/auth.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { handleUserDeletion } from '../services/tournament.js';
 
 interface RegisterBody {
 	username: string;
@@ -229,7 +231,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
 	/**
 	 * DELETE /account
-	 * Delete current user's account (GDPR Right to Erasure)
+	 * Permanently delete current user's account (GDPR Right to Erasure)
+	 * This completely removes the user and all associated data
 	 */
 	fastify.delete('/account', { preHandler: authMiddleware }, async (request, reply) => {
 		if (!request.user) {
@@ -239,19 +242,32 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		const userId = request.user.userId;
 
 		try {
-			// Log the deletion for GDPR audit
+			// 1. Log the deletion BEFORE deleting (with NULL user_id for privacy)
 			db.prepare(`
 				INSERT INTO audit_log (user_id, action, details)
-				VALUES (?, 'account_delete', '{"reason": "user_request"}')
-			`).run(userId);
+				VALUES (NULL, 'account_delete', '{"note": "Account permanently deleted per user request"}')
+			`).run();
 
-			// Delete user data (cascades to user_stats, sessions, friendships)
+			// 2. Explicitly delete sessions first (removes IP/user agent data)
+			db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+
+			// 3. Delete notifications
+			db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
+
+			// 4. Handle tournament cleanup (forfeit matches, update aliases)
+			handleUserDeletion(userId, 'Deleted User');
+
+			// 5. Delete user (cascades to user_stats, friendships)
+			// Matches: player_id → NULL (SET NULL constraint)
 			db.prepare('DELETE FROM users WHERE id = ?').run(userId);
 
-			// Clear cookie
+			// 5. Clear cookie
 			reply.clearCookie('token', { path: '/' });
 
-			return reply.send({ message: 'Account deleted successfully' });
+			return reply.send({
+				message: 'Account deleted successfully. This action cannot be undone.',
+				note: 'All personal data has been permanently removed from our systems.'
+			});
 		} catch (error) {
 			fastify.log.error(error);
 			return reply.status(500).send({ error: 'Failed to delete account' });
@@ -325,51 +341,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		} catch (error) {
 			fastify.log.error(error);
 			return reply.status(500).send({ error: 'Failed to export data' });
-		}
-	});
-
-	/**
-	 * POST /anonymize
-	 * Anonymize user data (GDPR Right to be Forgotten - partial)
-	 */
-	fastify.post('/anonymize', { preHandler: authMiddleware }, async (request, reply) => {
-		if (!request.user) {
-			return reply.status(401).send({ error: 'Not authenticated' });
-		}
-
-		const userId = request.user.userId;
-		const anonymizedUsername = `deleted_user_${userId}`;
-		const anonymizedEmail = `deleted_${userId}@anonymous.local`;
-
-		try {
-			// Anonymize user data
-			db.prepare(`
-				UPDATE users SET
-					email = ?,
-					username = ?,
-					display_name = 'Deleted User',
-					password_hash = NULL,
-					avatar_url = '/default-avatar.png',
-					oauth_provider = NULL,
-					oauth_id = NULL,
-					is_anonymized = TRUE,
-					updated_at = CURRENT_TIMESTAMP
-				WHERE id = ?
-			`).run(anonymizedEmail, anonymizedUsername, userId);
-
-			// Log anonymization
-			db.prepare(`
-				INSERT INTO audit_log (user_id, action, details)
-				VALUES (?, 'account_anonymize', '{}')
-			`).run(userId);
-
-			// Clear cookie
-			reply.clearCookie('token', { path: '/' });
-
-			return reply.send({ message: 'Account anonymized successfully' });
-		} catch (error) {
-			fastify.log.error(error);
-			return reply.status(500).send({ error: 'Failed to anonymize account' });
 		}
 	});
 }

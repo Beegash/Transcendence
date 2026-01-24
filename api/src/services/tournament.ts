@@ -153,7 +153,7 @@ export function getParticipants(tournamentId: number): TournamentParticipant[] {
 		ORDER BY tp.seed
 	`);
 	const participants = stmt.all(tournamentId) as (TournamentParticipant & { current_username?: string })[];
-	
+
 	// Override alias with current username if user exists
 	return participants.map(p => ({
 		...p,
@@ -281,11 +281,11 @@ export function getTournamentMatches(tournamentId: number): TournamentMatch[] {
 		WHERE m.tournament_id = ?
 		ORDER BY m.tournament_round, m.tournament_match_number
 	`);
-	const matches = stmt.all(tournamentId) as (TournamentMatch & { 
+	const matches = stmt.all(tournamentId) as (TournamentMatch & {
 		player1_current_username?: string;
 		player2_current_username?: string;
 	})[];
-	
+
 	// Override aliases with current usernames if users exist
 	return matches.map(m => ({
 		...m,
@@ -502,4 +502,137 @@ export function getBracket(tournamentId: number) {
 		rounds,
 		totalRounds: Object.keys(rounds).length,
 	};
+}
+
+/**
+ * Handle user deletion/anonymization in tournaments (GDPR compliance)
+ * - Updates aliases to Guest_xxx format
+ * - Auto-forfeits any pending matches (opponent wins by walkover)
+ * - Marks user as eliminated in active tournaments
+ */
+export function handleUserDeletion(userId: number, newAlias: string): void {
+	// 1. Update alias in tournament_participants table
+	db.prepare(`
+		UPDATE tournament_participants 
+		SET alias = ? 
+		WHERE user_id = ?
+	`).run(newAlias, userId);
+
+	// 2. Update alias in matches table (both player1 and player2)
+	db.prepare(`
+		UPDATE matches 
+		SET player1_alias = ? 
+		WHERE player1_id = ?
+	`).run(newAlias, userId);
+
+	db.prepare(`
+		UPDATE matches 
+		SET player2_alias = ? 
+		WHERE player2_id = ?
+	`).run(newAlias, userId);
+
+	// 3. Find and auto-forfeit pending tournament matches where this user is a player
+	const pendingMatches = db.prepare(`
+		SELECT * FROM matches 
+		WHERE (player1_id = ? OR player2_id = ?) 
+		AND status = 'pending' 
+		AND tournament_id IS NOT NULL
+	`).all(userId, userId) as TournamentMatch[];
+
+	for (const match of pendingMatches) {
+		const isPlayer1 = match.player1_id === userId;
+		const opponentId = isPlayer1 ? match.player2_id : match.player1_id;
+		const opponentAlias = isPlayer1 ? match.player2_alias : match.player1_alias;
+
+		// If opponent exists, they win by walkover (5-0)
+		if (opponentId) {
+			const player1Score = isPlayer1 ? 0 : 5;
+			const player2Score = isPlayer1 ? 5 : 0;
+
+			db.prepare(`
+				UPDATE matches 
+				SET player1_score = ?, player2_score = ?, winner_id = ?, 
+					status = 'completed', ended_at = CURRENT_TIMESTAMP
+				WHERE id = ?
+			`).run(player1Score, player2Score, opponentId, match.id);
+
+			// Advance winner to next round
+			if (match.tournament_id && match.tournament_round && match.tournament_match_number) {
+				advanceWinnerPublic(
+					match.tournament_id,
+					match.tournament_round,
+					match.tournament_match_number,
+					opponentId,
+					opponentAlias
+				);
+			}
+		} else {
+			// No opponent, just mark match as cancelled
+			db.prepare(`
+				UPDATE matches SET status = 'cancelled' WHERE id = ?
+			`).run(match.id);
+		}
+	}
+
+	// 4. Mark user as eliminated in all active tournament participations
+	db.prepare(`
+		UPDATE tournament_participants 
+		SET is_eliminated = 1 
+		WHERE user_id = ? 
+		AND tournament_id IN (SELECT id FROM tournaments WHERE status = 'active')
+	`).run(userId);
+}
+
+/**
+ * Public wrapper for advanceWinner (used by handleUserDeletion)
+ */
+function advanceWinnerPublic(
+	tournamentId: number,
+	currentRound: number,
+	currentMatchNumber: number,
+	winnerId: number | null,
+	winnerAlias: string | null
+): void {
+	const nextRound = currentRound + 1;
+	const nextMatchNumber = Math.ceil(currentMatchNumber / 2);
+
+	// Check if next round match exists
+	const checkStmt = db.prepare(`
+		SELECT * FROM matches 
+		WHERE tournament_id = ? AND tournament_round = ? AND tournament_match_number = ?
+	`);
+	const nextMatch = checkStmt.get(tournamentId, nextRound, nextMatchNumber) as TournamentMatch | null;
+
+	if (!nextMatch) {
+		// Tournament complete - this was the final
+		const finalStmt = db.prepare(`
+			UPDATE tournaments 
+			SET status = 'completed', winner_id = ?, ended_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		finalStmt.run(winnerId, tournamentId);
+
+		if (winnerId) {
+			db.prepare(`
+				UPDATE tournament_participants SET final_position = 1
+				WHERE tournament_id = ? AND user_id = ?
+			`).run(tournamentId, winnerId);
+		}
+		return;
+	}
+
+	// Determine slot
+	const isFirstSlot = currentMatchNumber % 2 === 1;
+
+	if (isFirstSlot) {
+		db.prepare(`
+			UPDATE matches SET player1_id = ?, player1_alias = ?
+			WHERE tournament_id = ? AND tournament_round = ? AND tournament_match_number = ?
+		`).run(winnerId, winnerAlias, tournamentId, nextRound, nextMatchNumber);
+	} else {
+		db.prepare(`
+			UPDATE matches SET player2_id = ?, player2_alias = ?
+			WHERE tournament_id = ? AND tournament_round = ? AND tournament_match_number = ?
+		`).run(winnerId, winnerAlias, tournamentId, nextRound, nextMatchNumber);
+	}
 }

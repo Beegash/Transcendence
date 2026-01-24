@@ -49,6 +49,19 @@ export function renderSettingsPage(): void {
         <div id="username-success" class="text-green-400 text-sm mt-2 hidden"></div>
       </div>
       
+      <!-- Password Change -->
+      <div class="card mb-6">
+        <h2 class="font-game text-lg text-pong-primary mb-4">${t('settings.changePassword') || 'Change Password'}</h2>
+        <p class="text-white/60 text-sm mb-4">${t('settings.passwordHint') || 'Password must be at least 8 characters with uppercase, lowercase, and a number.'}</p>
+        <div class="space-y-3">
+          <input type="password" id="current-password-input" class="input w-full" placeholder="${t('settings.currentPassword') || 'Current Password'}" />
+          <input type="password" id="new-password-input" class="input w-full" placeholder="${t('settings.newPassword') || 'New Password'}" />
+          <input type="password" id="confirm-password-input" class="input w-full" placeholder="${t('settings.confirmNewPassword') || 'Confirm New Password'}" />
+          <button id="change-password-btn" class="btn btn-primary w-full">${t('common.save') || 'Save'}</button>
+        </div>
+        <div id="password-error" class="text-red-400 text-sm mt-2 hidden"></div>
+        <div id="password-success" class="text-green-400 text-sm mt-2 hidden"></div>
+      </div>
     
       <!-- Privacy (GDPR) -->
       <div class="card mb-6">
@@ -59,12 +72,6 @@ export function renderSettingsPage(): void {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
             </svg>
             ${t('settings.exportData')}
-          </button>
-          <button id="anonymize-btn" class="btn btn-secondary w-full flex items-center justify-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            ${t('settings.anonymize')}
           </button>
         </div>
       </div>
@@ -167,6 +174,68 @@ export function renderSettingsPage(): void {
     changeUsernameBtn.textContent = t('common.save') || 'Save';
   });
 
+  // Password change
+  const currentPasswordInput = document.getElementById('current-password-input') as HTMLInputElement;
+  const newPasswordInput = document.getElementById('new-password-input') as HTMLInputElement;
+  const confirmPasswordInput = document.getElementById('confirm-password-input') as HTMLInputElement;
+  const changePasswordBtn = document.getElementById('change-password-btn') as HTMLButtonElement;
+  const passwordError = document.getElementById('password-error')!;
+  const passwordSuccess = document.getElementById('password-success')!;
+
+  changePasswordBtn?.addEventListener('click', async () => {
+    const currentPassword = currentPasswordInput.value;
+    const newPassword = newPasswordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+
+    // Reset messages
+    passwordError.classList.add('hidden');
+    passwordSuccess.classList.add('hidden');
+
+    // Validate inputs
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      passwordError.textContent = t('errors.required') || 'All fields are required';
+      passwordError.classList.remove('hidden');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      passwordError.textContent = t('errors.passwordMismatch') || 'Passwords do not match';
+      passwordError.classList.remove('hidden');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      passwordError.textContent = t('errors.minLength', { min: 8 }) || 'Password must be at least 8 characters';
+      passwordError.classList.remove('hidden');
+      return;
+    }
+
+    changePasswordBtn.disabled = true;
+    changePasswordBtn.textContent = '...';
+
+    const user = auth.getUser();
+    if (!user) {
+      router.navigate('/login');
+      return;
+    }
+
+    const result = await api.put(`/users/${user.id}/password`, { currentPassword, newPassword });
+
+    if (result.success) {
+      passwordSuccess.textContent = t('settings.passwordChanged') || 'Password changed successfully!';
+      passwordSuccess.classList.remove('hidden');
+      currentPasswordInput.value = '';
+      newPasswordInput.value = '';
+      confirmPasswordInput.value = '';
+    } else {
+      passwordError.textContent = result.error || 'Failed to change password';
+      passwordError.classList.remove('hidden');
+    }
+
+    changePasswordBtn.disabled = false;
+    changePasswordBtn.textContent = t('common.save') || 'Save';
+  });
+
   // Delete account modal
   const deleteBtn = document.getElementById('delete-account-btn');
   const deleteModal = document.getElementById('delete-modal');
@@ -238,22 +307,5 @@ export function renderSettingsPage(): void {
 
     btn.disabled = false;
     btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> ${t('settings.exportData')}`;
-  });
-
-  // Anonymize button
-  document.getElementById('anonymize-btn')?.addEventListener('click', async () => {
-    if (!confirm('Are you sure you want to anonymize your account? This will remove your personal data but keep your game history.')) {
-      return;
-    }
-
-    const result = await api.post('/auth/anonymize', {});
-
-    if (result.success) {
-      await auth.logout();
-      alert('Account anonymized successfully');
-      router.navigate('/');
-    } else {
-      alert(result.error || 'Failed to anonymize account');
-    }
   });
 }

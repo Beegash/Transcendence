@@ -156,6 +156,14 @@ class RoomManager {
 			}
 		}
 
+		// Prevent same user from joining as both players (self-lobby join bug)
+		if (userId) {
+			if (room.player1?.userId === userId || room.player2?.userId === userId) {
+				console.log(`User ${userId} tried to join room ${roomId} but is already in the room - self-join prevented`);
+				return null;
+			}
+		}
+
 		const player: Player = {
 			id: playerId,
 			ws,

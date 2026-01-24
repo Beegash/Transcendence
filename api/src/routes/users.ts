@@ -180,6 +180,71 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	);
 
 	/**
+	 * PUT /:id/password
+	 * Change user password
+	 */
+	fastify.put<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>(
+		'/:id/password',
+		{ preHandler: authMiddleware },
+		async (
+			request: FastifyRequest<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>,
+			reply: FastifyReply
+		) => {
+			const userId = parseInt(request.params.id, 10);
+
+			if (isNaN(userId)) {
+				return reply.status(400).send({ error: 'Invalid user ID' });
+			}
+
+			// Users can only change their own password
+			if (request.user?.userId !== userId) {
+				return reply.status(403).send({ error: 'You can only change your own password' });
+			}
+
+			const { currentPassword, newPassword } = request.body;
+
+			if (!currentPassword || !newPassword) {
+				return reply.status(400).send({ error: 'Current password and new password are required' });
+			}
+
+			// Get current password hash
+			const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId) as { password_hash: string | null } | undefined;
+
+			if (!user) {
+				return reply.status(404).send({ error: 'User not found' });
+			}
+
+			if (!user.password_hash) {
+				return reply.status(400).send({ error: 'Cannot change password for OAuth-only accounts' });
+			}
+
+			// Verify current password
+			const { verifyPassword, validatePassword, hashPassword } = await import('../services/auth.js');
+			const isValid = await verifyPassword(currentPassword, user.password_hash);
+
+			if (!isValid) {
+				return reply.status(401).send({ error: 'Current password is incorrect' });
+			}
+
+			// Validate new password strength
+			const validation = validatePassword(newPassword);
+			if (!validation.valid) {
+				return reply.status(400).send({ error: validation.message });
+			}
+
+			// Hash and save new password
+			try {
+				const newHash = await hashPassword(newPassword);
+				db.prepare('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newHash, userId);
+				return reply.send({ message: 'Password changed successfully' });
+			} catch (error) {
+				fastify.log.error(error);
+				return reply.status(500).send({ error: 'Failed to change password' });
+			}
+		}
+	);
+
+	/**
 	 * GET /:id/matches
 	 * Get user's match history
 	 */
@@ -200,8 +265,10 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				.prepare(
 					`SELECT m.id, m.player1_id, m.player2_id, m.player1_score, m.player2_score, 
                   m.winner_id, m.match_type, m.ended_at,
-                  u1.username as player1_username, u1.display_name as player1_display_name,
-                  u2.username as player2_username, u2.display_name as player2_display_name
+                  COALESCE(u1.username, 'Deleted User') as player1_username, 
+                  COALESCE(u1.display_name, 'Deleted User') as player1_display_name,
+                  COALESCE(u2.username, 'Deleted User') as player2_username, 
+                  COALESCE(u2.display_name, 'Deleted User') as player2_display_name
            FROM matches m
            LEFT JOIN users u1 ON m.player1_id = u1.id
            LEFT JOIN users u2 ON m.player2_id = u2.id

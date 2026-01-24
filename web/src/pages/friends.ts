@@ -32,22 +32,22 @@ export async function renderFriendsPage(): Promise<void> {
       
       <!-- Search Section -->
       <div class="card mb-8">
-        <h2 class="font-game text-xl text-pong-primary mb-4">Find Players</h2>
+        <h2 class="font-game text-xl text-pong-primary mb-4">${t('friends.findPlayers')}</h2>
         <div class="flex gap-2">
           <input 
             type="text" 
             id="user-search-input" 
-            placeholder="Search by username..." 
+            placeholder="${t('friends.searchPlaceholder')}" 
             class="flex-1 bg-pong-darker border border-white/20 rounded px-4 py-2 text-white focus:outline-none focus:border-pong-primary"
           />
-          <button id="user-search-btn" class="btn btn-primary">Search</button>
+          <button id="user-search-btn" class="btn btn-primary">${t('common.search')}</button>
         </div>
         <div id="search-results" class="mt-4 space-y-2"></div>
       </div>
 
       <!-- Friends List Section -->
       <div class="card">
-        <h2 class="font-game text-xl text-pong-secondary mb-4">My Friends</h2>
+        <h2 class="font-game text-xl text-pong-secondary mb-4">${t('friends.myFriends')}</h2>
         <div id="friends-list-container" class="space-y-2">
           <div class="loading-spinner mx-auto my-4"></div>
         </div>
@@ -70,7 +70,7 @@ function setupSearch(): void {
 		const query = input.value.trim();
 		if (query.length < 2) return;
 
-		btn.textContent = 'Searching...';
+		btn.textContent = t('friends.searching');
 		(btn as HTMLButtonElement).disabled = true;
 
 		try {
@@ -81,7 +81,7 @@ function setupSearch(): void {
 		} catch (err) {
 			console.error('Search error:', err);
 		} finally {
-			btn.textContent = 'Search';
+			btn.textContent = t('common.search');
 			(btn as HTMLButtonElement).disabled = false;
 		}
 	};
@@ -94,7 +94,7 @@ function setupSearch(): void {
 
 function renderSearchResults(container: HTMLElement, users: any[]): void {
 	if (users.length === 0) {
-		container.innerHTML = `<p class="text-white/40 text-center py-4">No users found</p>`;
+		container.innerHTML = `<p class="text-white/40 text-center py-4">${t('common.noResults')}</p>`;
 		return;
 	}
 
@@ -106,11 +106,11 @@ function renderSearchResults(container: HTMLElement, users: any[]): void {
           <div class="text-white font-medium">${user.displayName}</div>
           <div class="text-white/50 text-xs">@${user.username}</div>
         </div>
-        <span class="badge ${user.isOnline ? 'badge-online' : 'badge-offline'} ml-2"></span>
+        <span class="badge ${user.isOnline ? 'badge-online' : 'badge-offline'} ml-2">${user.isOnline ? t('profile.online') : t('profile.offline')}</span>
       </div>
       <div class="flex gap-2">
-        <a href="/profile/${user.id}" data-link class="btn btn-secondary text-xs px-3 py-1">View Profile</a>
-        <button class="btn btn-primary text-xs px-3 py-1 add-friend-btn" data-user-id="${user.id}">Add Friend</button>
+        <a href="/profile/${user.id}" data-link class="btn btn-secondary text-xs px-3 py-1">${t('notifications.viewProfile')}</a>
+        <button class="btn btn-primary text-xs px-3 py-1 add-friend-btn" data-user-id="${user.id}">${t('profile.addFriend')}</button>
       </div>
     </div>
   `).join('');
@@ -123,16 +123,16 @@ function renderSearchResults(container: HTMLElement, users: any[]): void {
 			if (!currentUser || !targetId) return;
 
 			targetBtn.disabled = true;
-			targetBtn.textContent = 'Sending...';
+			targetBtn.textContent = t('friends.sending');
 
 			const result = await api.post(`/users/${currentUser.id}/friends`, { friendId: parseInt(targetId) });
 			if (result.success) {
-				targetBtn.textContent = 'Sent';
+				targetBtn.textContent = t('friends.sent');
 				targetBtn.classList.replace('btn-primary', 'btn-secondary');
 			} else {
 				targetBtn.disabled = false;
-				targetBtn.textContent = 'Add Friend';
-				alert(result.error || 'Failed to send request');
+				targetBtn.textContent = t('profile.addFriend');
+				alert(result.error || t('friends.failedToSend'));
 			}
 		});
 	});
@@ -161,11 +161,11 @@ async function loadFriends(): Promise<void> {
               <div class="text-white font-medium">${f.display_name}</div>
               <div class="text-white/50 text-xs">@${f.username}</div>
             </div>
-            <span class="badge ${f.is_online ? 'badge-online' : 'badge-offline'} ml-2"></span>
+            <span class="badge ${f.is_online ? 'badge-online' : 'badge-offline'} ml-2">${f.is_online ? t('profile.online') : t('profile.offline')}</span>
           </div>
           <div class="flex gap-2">
-            <a href="/profile/${f.id}" data-link class="btn btn-secondary text-xs px-3 py-1">Profile</a>
-            <button class="btn btn-primary text-xs px-3 py-1 invite-game-btn" data-user-id="${f.id}">Invite</button>
+            <a href="/profile/${f.id}" data-link class="btn btn-secondary text-xs px-3 py-1">${t('nav.profile')}</a>
+            <button class="btn btn-primary text-xs px-3 py-1 invite-game-btn" data-user-id="${f.id}">${t('friends.invite')}</button>
           </div>
         </div>
       `).join('');
@@ -176,7 +176,7 @@ async function loadFriends(): Promise<void> {
 					if (!targetId) return;
 
 					targetBtn.disabled = true;
-					targetBtn.textContent = 'Inviting...';
+					targetBtn.textContent = t('friends.inviting');
 
 					try {
 						const result = await api.post<{ roomId: string; invitedUserId: number }>(`/users/invite/${targetId}`, {});
@@ -185,19 +185,19 @@ async function loadFriends(): Promise<void> {
 							router.navigate(`/game?mode=invite&roomId=${result.data.roomId}&invitedUserId=${result.data.invitedUserId}`);
 						} else {
 							targetBtn.disabled = false;
-							targetBtn.textContent = 'Invite';
-							alert(result.error || 'Failed to send invite');
+							targetBtn.textContent = t('friends.invite');
+							alert(result.error || t('friends.failedToInvite'));
 						}
 					} catch (err) {
 						console.error('Invite error:', err);
 						targetBtn.disabled = false;
-						targetBtn.textContent = 'Invite';
+						targetBtn.textContent = t('friends.invite');
 					}
 				});
 			});
 		}
 	} catch (err) {
 		console.error('Load friends error:', err);
-		container.innerHTML = `<p class="text-red-400 text-center py-4">Error loading friends</p>`;
+		container.innerHTML = `<p class="text-red-400 text-center py-4">${t('friends.errorLoading')}</p>`;
 	}
 }

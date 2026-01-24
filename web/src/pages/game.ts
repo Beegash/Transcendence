@@ -166,14 +166,14 @@ function renderGameMenu(content: HTMLElement): void {
 function startAIGame(content: HTMLElement): void {
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
-      <h2 class="font-game text-2xl text-yellow-500 mb-8">vs AI</h2>
+      <h2 class="font-game text-2xl text-yellow-500 mb-8">${t('game.vsAI')}</h2>
       
       <div class="card mb-6">
-        <p class="text-white/80 mb-4">Connecting to game server...</p>
+        <p class="text-white/80 mb-4">${t('game.connectingServer')}</p>
         <div class="loading-spinner mx-auto"></div>
       </div>
       
-      <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+      <button id="cancel-btn" class="btn btn-secondary">${t('common.cancel')}</button>
     </div>
   `;
 
@@ -188,9 +188,9 @@ function startAIGame(content: HTMLElement): void {
 	}).catch(() => {
 		content.innerHTML = `
       <div class="max-w-lg mx-auto px-4 py-8 text-center">
-        <h2 class="font-game text-2xl text-red-500 mb-4">Connection Failed</h2>
-        <p class="text-white/80 mb-6">Could not connect to game server.</p>
-        <button id="back-btn" class="btn btn-secondary">Back to Menu</button>
+        <h2 class="font-game text-2xl text-red-500 mb-4">${t('game.connectionFailed')}</h2>
+        <p class="text-white/80 mb-6">${t('game.couldNotConnect')}</p>
+        <button id="back-btn" class="btn btn-secondary">${t('game.backToMenu')}</button>
       </div>
     `;
 		document.getElementById('back-btn')?.addEventListener('click', () => renderGameMenu(content));
@@ -209,17 +209,17 @@ function startAIGame(content: HTMLElement): void {
 function showAIReadyScreen(content: HTMLElement): void {
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
-      <h2 class="font-game text-2xl text-yellow-500 mb-8">AI Ready!</h2>
+      <h2 class="font-game text-2xl text-yellow-500 mb-8">${t('game.aiReady')}</h2>
       
       <div class="card mb-6">
-        <p class="text-white/80 mb-2">You are playing against:</p>
-        <p class="font-game text-2xl text-yellow-500">AI Opponent</p>
-        <p class="text-white/60 text-sm mt-2">AI updates its view every 1 second</p>
+        <p class="text-white/80 mb-2">${t('game.playingAgainst')}</p>
+        <p class="font-game text-2xl text-yellow-500">${t('game.aiOpponent')}</p>
+        <p class="text-white/60 text-sm mt-2">${t('game.aiRefreshInfo')}</p>
       </div>
       
-      <p class="text-white/70 mb-6">Click Ready to start the game!</p>
+      <p class="text-white/70 mb-6">${t('game.clickReadyToStart')}</p>
       
-      <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready!</button>
+      <button id="ready-btn" class="btn btn-primary btn-lg">${t('game.imReady')}</button>
       
       <p class="text-white/50 text-sm mt-6">${t('game.you')}: ${t('game.player')} 1 (${t('game.red')})</p>
     </div>
@@ -228,7 +228,7 @@ function showAIReadyScreen(content: HTMLElement): void {
 	document.getElementById('ready-btn')?.addEventListener('click', () => {
 		gameSocket.ready();
 		const btn = document.getElementById('ready-btn')!;
-		btn.textContent = 'Starting game...';
+		btn.textContent = t('game.startingGame');
 		btn.classList.add('opacity-50');
 		(btn as HTMLButtonElement).disabled = true;
 	});
@@ -553,29 +553,29 @@ function showOnlineLobby(content: HTMLElement): void {
       <div class="space-y-6">
         <!-- Create Room -->
         <div class="card">
-          <h3 class="font-game text-lg text-pong-primary mb-4">Create Room</h3>
-          <p class="text-white/80 text-sm mb-4">Create a new room and share the code with your friend.</p>
-          <button id="create-room-btn" class="btn btn-primary w-full">Create Room</button>
+          <h3 class="font-game text-lg text-pong-primary mb-4">${t('game.createRoom')}</h3>
+          <p class="text-white/80 text-sm mb-4">${t('game.createRoomDesc')}</p>
+          <button id="create-room-btn" class="btn btn-primary w-full">${t('game.createRoom')}</button>
         </div>
         
         <!-- Join Room -->
         <div class="card">
-          <h3 class="font-game text-lg text-pong-secondary mb-4">Join Room</h3>
-          <p class="text-white/80 text-sm mb-4">Enter a room code to join an existing game.</p>
+          <h3 class="font-game text-lg text-pong-secondary mb-4">${t('game.joinRoom')}</h3>
+          <p class="text-white/80 text-sm mb-4">${t('game.joinRoomDesc')}</p>
           <div class="flex gap-2">
-            <input type="text" id="room-code-input" class="input flex-1 uppercase" placeholder="ROOM CODE" maxlength="6">
-            <button id="join-room-btn" class="btn btn-secondary">Join</button>
+            <input type="text" id="room-code-input" class="input flex-1 uppercase" placeholder="${t('game.roomCode')}" maxlength="6">
+            <button id="join-room-btn" class="btn btn-secondary">${t('game.join')}</button>
           </div>
         </div>
         
         <!-- Available Rooms -->
         <div class="card">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-game text-lg text-purple-400">Available Rooms</h3>
-            <button id="refresh-rooms-btn" class="text-white/60 hover:text-white text-sm">↻ Refresh</button>
+            <h3 class="font-game text-lg text-purple-400">${t('game.availableRooms')}</h3>
+            <button id="refresh-rooms-btn" class="text-white/60 hover:text-white text-sm">↻ ${t('game.refresh')}</button>
           </div>
           <div id="rooms-list" class="space-y-2">
-            <div class="text-center text-white/60 text-sm py-4">Loading rooms...</div>
+            <div class="text-center text-white/60 text-sm py-4">${t('game.loadingRooms')}</div>
           </div>
         </div>
         
@@ -602,7 +602,7 @@ function showOnlineLobby(content: HTMLElement): void {
 			);
 
 			if (waitingRooms.length === 0) {
-				roomsList.innerHTML = '<div class="text-center text-white/60 text-sm py-4">No rooms available. Create one!</div>';
+				roomsList.innerHTML = `<div class="text-center text-white/60 text-sm py-4">${t('game.noRooms')}</div>`;
 			} else {
 				roomsList.innerHTML = waitingRooms.map((room: { id: string; players: number }) => `
 					<div class="flex items-center justify-between bg-pong-darker p-3 rounded-lg">
@@ -623,7 +623,7 @@ function showOnlineLobby(content: HTMLElement): void {
 				});
 			}
 		} catch {
-			roomsList.innerHTML = '<div class="text-center text-red-400 text-sm py-4">Failed to load rooms</div>';
+			roomsList.innerHTML = `<div class="text-center text-red-400 text-sm py-4">${t('game.failedLoadRooms')}</div>`;
 		}
 	}
 
@@ -639,14 +639,14 @@ function showOnlineLobby(content: HTMLElement): void {
 	document.getElementById('refresh-rooms-btn')?.addEventListener('click', loadRooms);
 
 	// Connect to WebSocket
-	statusDiv.textContent = 'Connecting...';
+	statusDiv.textContent = t('game.connecting');
 	gameSocket.connect().then(() => {
-		statusDiv.textContent = 'Connected ✓';
+		statusDiv.textContent = t('game.connected');
 		statusDiv.classList.add('text-green-400');
 		loadRooms();
 		refreshInterval = setInterval(loadRooms, 5000); // Refresh every 5 seconds
 	}).catch(() => {
-		statusDiv.textContent = 'Connection failed';
+		statusDiv.textContent = t('game.connectionFailed');
 		statusDiv.classList.add('text-red-400');
 	});
 
@@ -665,7 +665,7 @@ function showOnlineLobby(content: HTMLElement): void {
 		const input = document.getElementById('room-code-input') as HTMLInputElement;
 		const code = input.value.trim().toUpperCase();
 		if (code.length !== 6) {
-			errorDiv.textContent = 'Room code must be 6 characters';
+			errorDiv.textContent = t('game.roomCodeError');
 			errorDiv.classList.remove('hidden');
 			return;
 		}
@@ -703,30 +703,30 @@ function showWaitingRoom(content: HTMLElement, roomId: string): void {
 
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
-      <h2 class="font-game text-2xl text-pong-primary mb-8">Waiting for Opponent</h2>
+      <h2 class="font-game text-2xl text-pong-primary mb-8">${t('game.waitingForOpponent')}</h2>
       
       <div class="card mb-6">
-        <p class="text-white/80 mb-2">Room Code:</p>
+        <p class="text-white/80 mb-2">${t('game.roomCodeLabel')}</p>
         <p class="font-game text-4xl text-gradient tracking-widest" id="room-id">${roomId}</p>
-        <button id="copy-code-btn" class="btn btn-secondary text-sm mt-4">Copy Code</button>
+        <button id="copy-code-btn" class="btn btn-secondary text-sm mt-4">${t('game.copyCode')}</button>
       </div>
       
       <div class="flex items-center justify-center gap-2 text-white/60">
         <div class="loading-spinner"></div>
-        <span>Waiting for Player 2 to join...</span>
+        <span>${t('game.waitingPlayer2')}</span>
       </div>
       
-      <p class="text-white/50 text-sm mt-6">You are Player ${playerNumber}</p>
+      <p class="text-white/50 text-sm mt-6">${t('game.youArePlayer')} ${playerNumber}</p>
       
-      <button id="cancel-btn" class="btn btn-secondary mt-8">Cancel</button>
+      <button id="cancel-btn" class="btn btn-secondary mt-8">${t('common.cancel')}</button>
     </div>
   `;
 
 	document.getElementById('copy-code-btn')?.addEventListener('click', () => {
 		navigator.clipboard.writeText(roomId);
 		const btn = document.getElementById('copy-code-btn')!;
-		btn.textContent = 'Copied!';
-		setTimeout(() => btn.textContent = 'Copy Code', 2000);
+		btn.textContent = t('game.copied');
+		setTimeout(() => btn.textContent = t('game.copyCode'), 2000);
 	});
 
 	document.getElementById('cancel-btn')?.addEventListener('click', () => {
@@ -741,7 +741,7 @@ function showWaitingRoom(content: HTMLElement, roomId: string): void {
 
 	// Handle host disconnecting (fallback, shouldn't happen here but just in case)
 	const unsubDisconnect = gameSocket.on('opponent_disconnected', () => {
-		alert('Room closed. Returning to lobby.');
+		alert(t('game.roomClosed'));
 		cleanup();
 		showOnlineLobby(content);
 	});
@@ -753,16 +753,16 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
 	console.log('[Game] Showing ready screen, opponent:', opponentName);
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
-      <h2 class="font-game text-2xl text-pong-primary mb-8">Opponent Joined!</h2>
+      <h2 class="font-game text-2xl text-pong-primary mb-8">${t('game.opponentJoined')}</h2>
       
       <div class="card mb-6">
-        <p class="text-white/80 mb-2">Playing against:</p>
-        <p class="font-game text-2xl text-pong-secondary">${opponentName || 'Anonymous'}</p>
+        <p class="text-white/80 mb-2">${t('game.playingAgainst')}</p>
+        <p class="font-game text-2xl text-pong-secondary">${opponentName || t('common.anonymous')}</p>
       </div>
       
-      <p class="text-white/70 mb-6">Click Ready when you're prepared to play.</p>
+      <p class="text-white/70 mb-6">${t('game.clickReadyHint')}</p>
       
-      <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready!</button>
+      <button id="ready-btn" class="btn btn-primary btn-lg">${t('game.imReady')}</button>
       
       <p class="text-white/50 text-sm mt-6">${t('game.you')}: ${t('game.player')} ${playerNumber} (${playerNumber === 1 ? t('game.red') : t('game.blue')})</p>
     </div>
@@ -771,7 +771,7 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
 	document.getElementById('ready-btn')?.addEventListener('click', () => {
 		gameSocket.ready();
 		const btn = document.getElementById('ready-btn')!;
-		btn.textContent = 'Waiting for opponent...';
+		btn.textContent = t('game.waitingForOpponent');
 		btn.classList.add('opacity-50');
 		(btn as HTMLButtonElement).disabled = true;
 	});
@@ -788,7 +788,7 @@ function showReadyScreen(content: HTMLElement, opponentName?: string): void {
 	});
 
 	const unsubDisconnect = gameSocket.on('opponent_disconnected', () => {
-		alert('Opponent disconnected. Returning to lobby.');
+		alert(t('game.opponentDisconnected'));
 		cleanup();
 		showOnlineLobby(content);
 	});

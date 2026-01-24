@@ -109,7 +109,7 @@ async function loadGlobalStats(): Promise<void> {
   const result = await api.get<{ stats: GlobalStats }>('/stats/global');
 
   if (!result.success || !result.data) {
-    container.innerHTML = '<div class="text-red-400">Failed to load stats</div>';
+    container.innerHTML = `<div class="text-red-400">${t('dashboard.failedLoad')}</div>`;
     return;
   }
 
@@ -160,8 +160,8 @@ async function loadUserStats(): Promise<void> {
   if (!result.success || !result.data) {
     container.innerHTML = `
       <div class="card">
-        <h2 class="font-game text-xl text-pong-primary mb-4">Your Stats</h2>
-        <p class="text-white/60 text-center py-4">No stats yet. Play some games!</p>
+        <h2 class="font-game text-xl text-pong-primary mb-4">${t('dashboard.yourStats')}</h2>
+        <p class="text-white/60 text-center py-4">${t('dashboard.noStatsYet')}</p>
       </div>
     `;
     return;
@@ -263,8 +263,8 @@ async function loadMatchHistory(): Promise<void> {
   if (!result.success || !result.data?.history.length) {
     container.innerHTML = `
       <div class="card">
-        <h2 class="font-game text-lg text-pong-secondary mb-4">Match History</h2>
-        <p class="text-white/60 text-center py-4">No matches played yet</p>
+        <h2 class="font-game text-lg text-pong-secondary mb-4">${t('dashboard.matchHistory')}</h2>
+        <p class="text-white/60 text-center py-4">${t('dashboard.noMatches')}</p>
       </div>
     `;
     return;
@@ -274,7 +274,7 @@ async function loadMatchHistory(): Promise<void> {
 
   container.innerHTML = `
     <div class="card">
-      <h2 class="font-game text-lg text-pong-secondary mb-4">Recent Matches</h2>
+      <h2 class="font-game text-lg text-pong-secondary mb-4">${t('dashboard.recentMatches')}</h2>
       <div class="space-y-2">
         ${history.map(m => `
           <div class="flex items-center justify-between p-3 bg-pong-darker rounded-lg ${m.won ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}">
@@ -383,18 +383,18 @@ function getRankDisplay(rank: number): string {
  */
 function renderPieChart(wins: number, losses: number): string {
   const total = wins + losses;
-  
+
   // No data case
   if (total === 0) {
     return `
       <svg viewBox="0 0 200 200" class="w-full h-full">
         <circle cx="100" cy="100" r="80" fill="#374151" />
         <circle cx="100" cy="100" r="50" fill="#0f172a" />
-        <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="fill-white/60" style="font-size: 14px;">No data</text>
+        <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="fill-white/60" style="font-size: 14px;">${t('dashboard.noData')}</text>
       </svg>
     `;
   }
-  
+
   // All wins - full green circle
   if (losses === 0) {
     return `
@@ -405,7 +405,7 @@ function renderPieChart(wins: number, losses: number): string {
       </svg>
     `;
   }
-  
+
   // All losses - full red circle
   if (wins === 0) {
     return `
@@ -416,10 +416,10 @@ function renderPieChart(wins: number, losses: number): string {
       </svg>
     `;
   }
-  
+
   // Mixed wins and losses - draw pie chart
   const winPercentage = wins / total;
-  
+
   // Helper function to calculate point on circle
   function getCoordinatesForPercent(percent: number): { x: number; y: number } {
     const angle = 2 * Math.PI * (percent - 0.25); // -0.25 to start from top
@@ -428,13 +428,13 @@ function renderPieChart(wins: number, losses: number): string {
       y: Math.sin(angle)
     };
   }
-  
+
   // Create pie slice path
   function createSlicePath(startPercent: number, endPercent: number, radius: number): string {
     const start = getCoordinatesForPercent(startPercent);
     const end = getCoordinatesForPercent(endPercent);
     const largeArcFlag = (endPercent - startPercent) > 0.5 ? 1 : 0;
-    
+
     return [
       `M 100 100`,
       `L ${100 + start.x * radius} ${100 + start.y * radius}`,
@@ -442,10 +442,10 @@ function renderPieChart(wins: number, losses: number): string {
       'Z'
     ].join(' ');
   }
-  
+
   const winsPath = createSlicePath(0, winPercentage, 80);
   const lossesPath = createSlicePath(winPercentage, 1, 80);
-  
+
   return `
     <svg viewBox="0 0 200 200" class="w-full h-full">
       <!-- Wins slice (green) -->

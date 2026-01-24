@@ -358,9 +358,14 @@ async function loadMatchHistory(userId: number): Promise<void> {
   const matchesHtml = result.data.matches.map((match) => {
     const isPlayer1 = match.player1_id === userId;
     const won = match.winner_id === userId;
-    const opponentName = isPlayer1
-      ? (match.player2_display_name || match.player2_username || 'Unknown')
-      : (match.player1_display_name || match.player1_username || 'Unknown');
+    const opponentNameRaw = isPlayer1
+      ? (match.player2_display_name || match.player2_username || 'Deleted User')
+      : (match.player1_display_name || match.player1_username || 'Deleted User');
+
+    // Localize 'Deleted User' if detected
+    const opponentName = (opponentNameRaw === 'Deleted User' || opponentNameRaw === 'Unknown')
+      ? t('common.deletedUser')
+      : opponentNameRaw;
     const myScore = isPlayer1 ? match.player1_score : match.player2_score;
     const oppScore = isPlayer1 ? match.player2_score : match.player1_score;
     const matchDate = match.ended_at ? formatMatchDate(match.ended_at as string) : '';
