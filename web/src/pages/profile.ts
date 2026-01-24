@@ -198,6 +198,16 @@ function setupAvatarUpload(userId: number): void {
       const file = avatarInput.files?.[0];
       if (!file) return;
 
+      console.log('File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+      // Check file type first
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert(t('errors.invalidFileType'));
+        avatarInput.value = '';
+        return;
+      }
+
       // Check file size before uploading (5MB limit)
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
@@ -211,11 +221,19 @@ function setupAvatarUpload(userId: number): void {
       const MAX_HEIGHT = 2048;
 
       try {
+        console.log('Checking image dimensions...');
+
         // Create an image element to check dimensions
         const img = new Image();
         const imageLoadPromise = new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error('Failed to load image'));
+          img.onload = () => {
+            console.log('Image loaded. Dimensions:', img.width, 'x', img.height);
+            resolve();
+          };
+          img.onerror = (e) => {
+            console.error('Image load error:', e);
+            reject(new Error('Failed to load image'));
+          };
         });
 
         img.src = URL.createObjectURL(file);
@@ -223,12 +241,14 @@ function setupAvatarUpload(userId: number): void {
 
         // Check dimensions
         if (img.width > MAX_WIDTH || img.height > MAX_HEIGHT) {
+          console.log('Image too large! Max:', MAX_WIDTH, 'x', MAX_HEIGHT);
           alert(t('errors.imageTooLarge'));
           URL.revokeObjectURL(img.src); // Clean up
           avatarInput.value = ''; // Reset input
           return;
         }
 
+        console.log('Image dimensions OK, proceeding with upload...');
         URL.revokeObjectURL(img.src); // Clean up
       } catch (err) {
         console.error('Error checking image dimensions:', err);
@@ -241,9 +261,11 @@ function setupAvatarUpload(userId: number): void {
       formData.append('avatar', file);
 
       try {
+        console.log('Uploading avatar...');
         const result = await api.post<{ avatarUrl: string }>(`/users/${userId}/avatar`, formData);
 
         if (result.success && result.data) {
+          console.log('Upload successful:', result.data.avatarUrl);
           // Update avatar display
           const avatarContainer = document.querySelector('.w-32.h-32.rounded-full');
           if (avatarContainer) {
@@ -252,6 +274,7 @@ function setupAvatarUpload(userId: number): void {
           // Reload page to show remove button
           renderProfilePage();
         } else {
+          console.error('Upload failed:', result.error);
           // Check if error is a translation key
           const errorMsg = result.error || '';
           if (errorMsg.startsWith('errors.')) {
