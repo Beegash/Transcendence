@@ -401,18 +401,23 @@ function initLocalGame(): void {
 		isFirstServe = false;
 	}
 
-	function update(): void {
+	function update(deltaTime: number): void {
 		if (!gameRunning || winner) return;
 
+		// Normalize delta time to 60 FPS (16.67ms per frame)
+		// This ensures consistent speed across different frame rates
+		const speedMultiplier = deltaTime / 16.67;
+
 		// Move paddles
-		if (keys['w'] || keys['W']) paddle1Y = Math.max(0, paddle1Y - PADDLE_SPEED);
-		if (keys['s'] || keys['S']) paddle1Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle1Y + PADDLE_SPEED);
-		if (keys['ArrowUp']) paddle2Y = Math.max(0, paddle2Y - PADDLE_SPEED);
-		if (keys['ArrowDown']) paddle2Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle2Y + PADDLE_SPEED);
+		const paddleMove = PADDLE_SPEED * speedMultiplier;
+		if (keys['w'] || keys['W']) paddle1Y = Math.max(0, paddle1Y - paddleMove);
+		if (keys['s'] || keys['S']) paddle1Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle1Y + paddleMove);
+		if (keys['ArrowUp']) paddle2Y = Math.max(0, paddle2Y - paddleMove);
+		if (keys['ArrowDown']) paddle2Y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, paddle2Y + paddleMove);
 
 		// Move ball
-		ballX += ballVX;
-		ballY += ballVY;
+		ballX += ballVX * speedMultiplier;
+		ballY += ballVY * speedMultiplier;
 
 		// Top/bottom collision
 		if (ballY <= 0 || ballY >= CANVAS_HEIGHT - BALL_SIZE) {
@@ -526,13 +531,19 @@ function initLocalGame(): void {
 		}
 	}
 
-	function gameLoop(): void {
-		update();
+	let lastTime = performance.now();
+
+	function gameLoop(currentTime: number): void {
+		// Calculate delta time in milliseconds
+		const deltaTime = currentTime - lastTime;
+		lastTime = currentTime;
+
+		update(deltaTime);
 		render();
 		animationFrameId = requestAnimationFrame(gameLoop);
 	}
 
-	gameLoop();
+	gameLoop(performance.now());
 }
 
 // ====================== ONLINE GAME ======================
