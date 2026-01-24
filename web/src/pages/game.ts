@@ -989,11 +989,22 @@ function initOnlineGame(initialState: GameState): void {
 	const unsubGameOver = gameSocket.on('game_over', (data) => {
 		gameState.status = 'finished';
 		gameState.winner = data.winner;
+		if (data.state) {
+			gameState.score = data.state.score;
+		}
+		// If opponent disconnected, show a message
+		if (data.reason === 'opponent_disconnected') {
+			console.log('Opponent disconnected, you win!');
+		}
 	});
 
 	const unsubDisconnect = gameSocket.on('opponent_disconnected', () => {
-		gameState.status = 'finished';
-		alert('Opponent disconnected!');
+		// This is only called if game was NOT in progress
+		// If game was in progress, game_over will be sent instead
+		if (gameState.status !== 'finished') {
+			gameState.status = 'finished';
+			alert('Opponent disconnected!');
+		}
 	});
 
 	cleanupFunctions.push(unsubState, unsubGameOver, unsubDisconnect);

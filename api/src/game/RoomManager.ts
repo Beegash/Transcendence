@@ -481,14 +481,86 @@ class RoomManager {
 	handleDisconnect(ws: WebSocket): void {
 		for (const [roomId, room] of this.rooms) {
 			if (room.player1?.ws === ws || room.player2?.ws === ws) {
-				const otherPlayer = room.player1?.ws === ws ? room.player2 : room.player1;
-				if (otherPlayer && otherPlayer.ws && otherPlayer.ws.readyState === WebSocket.OPEN) {
-					otherPlayer.ws.send(JSON.stringify({ type: 'opponent_disconnected' }));
-				}
+				const disconnectedPlayer = room.player1?.ws === ws ? 1 : 2;
+				const otherPlayer = disconnectedPlayer === 1 ? room.player2 : room.player1;
 
-				if (room.gameLoop) clearInterval(room.gameLoop);
-				if (room.aiLoop) clearInterval(room.aiLoop);
-				this.deleteRoom(roomId);
+				// If game is in progress, award win to remaining player
+				if (room.state.status === 'playing') {
+					const winner = disconnectedPlayer === 1 ? 2 : 1;
+					console.log(`Player ${disconnectedPlayer} disconnected during game. Awarding forfeit win to player ${winner}`);
+
+					// Stop game loops
+					if (room.gameLoop) {
+						clearInterval(room.gameLoop);
+						room.gameLoop = null;
+					}
+					if (room.aiLoop) {
+						clearInterval(room.aiLoop);
+						room.aiLoop = null;
+					}
+
+					// Set forfeit score: winner gets WINNING_SCORE, loser gets 0
+					if (winner === 1) {
+						room.state.score.player1 = WINNING_SCORE;
+						room.state.score.player2 = 0;
+					} else {
+						room.state.score.player1 = 0;
+						room.state.score.player2 = WINNING_SCORE;
+					}
+
+					// Set game as finished with winner
+					room.state.status = 'finished';
+					room.state.winner = winner as 1 | 2;
+
+					// Record match result (disconnecting player forfeits - 5-0)
+					try {
+						const player1Id = room.player1?.userId || null;
+						const player2Id = room.player2?.userId || null;
+						const player1Score = room.state.score.player1;
+						const player2Score = room.state.score.player2;
+						const player1Alias = room.player1?.username;
+						const player2Alias = room.player2?.username || (room.isVsAI ? 'AI' : undefined);
+						const matchType = room.isVsAI ? 'ai' : 'casual';
+
+						// Only record if at least one player is a real user
+						if (player1Id || player2Id) {
+							recordMatch(
+								player1Id,
+								player2Id,
+								player1Score,
+								player2Score,
+								matchType,
+								player1Alias,
+								player2Alias
+							);
+							console.log(`Match recorded (forfeit): P1(${player1Id}) ${player1Score} - ${player2Score} P2(${player2Id}) [${matchType}]`);
+						}
+					} catch (error) {
+						console.error('Failed to record match on disconnect:', error);
+					}
+
+					// Notify remaining player they won
+					if (otherPlayer && otherPlayer.ws && otherPlayer.ws.readyState === WebSocket.OPEN) {
+						otherPlayer.ws.send(JSON.stringify({
+							type: 'game_over',
+							winner: winner,
+							reason: 'opponent_disconnected',
+							state: this.getClientState(room),
+						}));
+					}
+
+					// Clean up room after a short delay
+					setTimeout(() => this.deleteRoom(roomId), 5000);
+				} else {
+					// Game not in progress - just notify and clean up
+					if (otherPlayer && otherPlayer.ws && otherPlayer.ws.readyState === WebSocket.OPEN) {
+						otherPlayer.ws.send(JSON.stringify({ type: 'opponent_disconnected' }));
+					}
+
+					if (room.gameLoop) clearInterval(room.gameLoop);
+					if (room.aiLoop) clearInterval(room.aiLoop);
+					this.deleteRoom(roomId);
+				}
 				break;
 			}
 		}

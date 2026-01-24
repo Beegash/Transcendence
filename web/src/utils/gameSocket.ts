@@ -24,6 +24,7 @@ export interface GameMessage {
 	message?: string;
 	username?: string;
 	tournamentId?: number;
+	reason?: string;
 }
 
 class GameSocket {
@@ -32,6 +33,7 @@ class GameSocket {
 	private reconnectAttempts = 0;
 	private maxReconnectAttempts = 5;
 	private reconnectDelay = 1000;
+	private intentionalDisconnect = false;
 
 	/**
 	 * Connect to game WebSocket server
@@ -42,6 +44,9 @@ class GameSocket {
 				resolve();
 				return;
 			}
+
+			// Reset intentional disconnect flag when connecting
+			this.intentionalDisconnect = false;
 
 			// Use wss:// for secure connection
 			const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -67,8 +72,8 @@ class GameSocket {
 				console.log('WebSocket closed:', event.code, event.reason);
 				this.emit({ type: 'disconnected' });
 
-				// Auto reconnect
-				if (this.reconnectAttempts < this.maxReconnectAttempts) {
+				// Only auto reconnect if not intentionally disconnected
+				if (!this.intentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
 					this.reconnectAttempts++;
 					setTimeout(() => {
 						console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
@@ -99,6 +104,8 @@ class GameSocket {
 	 * Disconnect from WebSocket
 	 */
 	disconnect(): void {
+		this.intentionalDisconnect = true;
+		this.reconnectAttempts = 0;
 		if (this.ws) {
 			this.ws.close();
 			this.ws = null;
