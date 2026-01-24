@@ -10,7 +10,7 @@ export const CANVAS_HEIGHT = 400;
 // Paddle settings
 export const PADDLE_WIDTH = 10;
 export const PADDLE_HEIGHT = 60; // Reduced from 80 for increased difficulty
-export const PADDLE_SPEED = 5;
+export const PADDLE_SPEED = 8;
 
 // Ball settings
 export const BALL_SIZE = 10;
