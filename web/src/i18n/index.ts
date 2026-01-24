@@ -242,6 +242,10 @@ const en: Translations = {
 		networkError: 'Network error. Please try again.',
 		unauthorized: 'Please log in to continue',
 		notFound: 'Page not found',
+		fileTooLarge: 'File size too large. Maximum file size is 5MB. Please compress or resize your image.',
+		invalidFileType: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP',
+		uploadFailed: 'Failed to upload file. Please try again.',
+		imageTooLarge: 'Image resolution too large. Maximum dimensions are 2048x2048 pixels. Please resize your image.',
 	},
 	common: {
 		loading: 'Loading...',
@@ -582,6 +586,10 @@ const tr: Translations = {
 		networkError: 'Ağ hatası. Lütfen tekrar deneyin.',
 		unauthorized: 'Devam etmek için giriş yapın',
 		notFound: 'Sayfa bulunamadı',
+		fileTooLarge: 'Dosya boyutu çok büyük. Maksimum dosya boyutu 5MB. Lütfen resminizi sıkıştırın veya yeniden boyutlandırın.',
+		invalidFileType: 'Geçersiz dosya türü. İzin verilenler: JPEG, PNG, GIF, WebP',
+		uploadFailed: 'Dosya yüklenemedi. Lütfen tekrar deneyin.',
+		imageTooLarge: 'Resim çözünürlüğü çok yüksek. Maksimum boyutlar 2048x2048 pikseldir. Lütfen resminizi yeniden boyutlandırın.',
 	},
 	common: {
 		loading: 'Yükleniyor...',
@@ -921,6 +929,10 @@ const de: Translations = {
 		networkError: 'Netzwerkfehler. Bitte versuche es erneut.',
 		unauthorized: 'Bitte melde dich an um fortzufahren',
 		notFound: 'Seite nicht gefunden',
+		fileTooLarge: 'Dateigröße zu groß. Maximale Dateigröße ist 5MB. Bitte komprimieren oder verkleinern Sie Ihr Bild.',
+		invalidFileType: 'Ungültiger Dateityp. Erlaubt: JPEG, PNG, GIF, WebP',
+		uploadFailed: 'Datei konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.',
+		imageTooLarge: 'Bildauflösung zu groß. Maximale Abmessungen sind 2048x2048 Pixel. Bitte verkleinern Sie Ihr Bild.',
 	},
 	common: {
 		loading: 'Lädt...',

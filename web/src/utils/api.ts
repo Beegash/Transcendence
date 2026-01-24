@@ -50,17 +50,35 @@ class ApiClient {
 
 		try {
 			const response = await fetch(`${this.baseUrl}${endpoint}`, config);
-			
+
 			// Check if response is JSON
 			const contentType = response.headers.get('content-type');
 			const isJson = contentType?.includes('application/json');
-			
+
 			let data: any;
 			if (isJson) {
 				data = await response.json();
 			} else {
 				// If not JSON, read as text (might be HTML error page)
 				const text = await response.text();
+
+				// Check if it's an HTML response (common with nginx/server errors for large files)
+				const isHtml = text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html');
+
+				if (isHtml) {
+					// Return a clean error message instead of HTML
+					if (response.status === 413) {
+						return {
+							success: false,
+							error: 'errors.fileTooLarge', // Will be translated by the UI
+						};
+					}
+					return {
+						success: false,
+						error: `Server error (${response.status}). Please try again.`,
+					};
+				}
+
 				return {
 					success: false,
 					error: `Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`,

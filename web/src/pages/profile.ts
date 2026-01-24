@@ -201,8 +201,39 @@ function setupAvatarUpload(userId: number): void {
       // Check file size before uploading (5MB limit)
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       if (file.size > MAX_FILE_SIZE) {
-        alert('File size too large. Maximum file size is 5MB. Please compress or resize your image.');
+        alert(t('errors.fileTooLarge'));
         avatarInput.value = ''; // Reset input
+        return;
+      }
+
+      // Check image resolution
+      const MAX_WIDTH = 2048;
+      const MAX_HEIGHT = 2048;
+
+      try {
+        // Create an image element to check dimensions
+        const img = new Image();
+        const imageLoadPromise = new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('Failed to load image'));
+        });
+
+        img.src = URL.createObjectURL(file);
+        await imageLoadPromise;
+
+        // Check dimensions
+        if (img.width > MAX_WIDTH || img.height > MAX_HEIGHT) {
+          alert(t('errors.imageTooLarge'));
+          URL.revokeObjectURL(img.src); // Clean up
+          avatarInput.value = ''; // Reset input
+          return;
+        }
+
+        URL.revokeObjectURL(img.src); // Clean up
+      } catch (err) {
+        console.error('Error checking image dimensions:', err);
+        alert(t('errors.uploadFailed'));
+        avatarInput.value = '';
         return;
       }
 
@@ -221,11 +252,17 @@ function setupAvatarUpload(userId: number): void {
           // Reload page to show remove button
           renderProfilePage();
         } else {
-          alert(result.error || 'Failed to upload avatar');
+          // Check if error is a translation key
+          const errorMsg = result.error || '';
+          if (errorMsg.startsWith('errors.')) {
+            alert(t(errorMsg));
+          } else {
+            alert(errorMsg || t('errors.uploadFailed'));
+          }
         }
       } catch (err) {
         console.error('Avatar upload error:', err);
-        alert('Failed to upload avatar');
+        alert(t('errors.uploadFailed'));
       } finally {
         // Reset input to allow selecting the same file again
         avatarInput.value = '';
