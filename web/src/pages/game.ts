@@ -891,7 +891,7 @@ function startOnlineGame(content: HTMLElement, initialState: GameState): void {
       </div>
       
       <p class="text-center text-white/60 text-sm mt-4">
-        <span class="hidden md:inline">Use ↑/↓ or W/S to move your paddle</span>
+        <span class="hidden md:inline">${t('game.useArrows')}</span>
         <span class="md:hidden">Swipe up/down on screen to move your paddle</span>
       </p>
     </div>
@@ -1155,7 +1155,7 @@ function startOnlineTournamentGame(content: HTMLElement, initialState: GameState
       </div>
       
       <p class="text-center text-white/60 text-sm mt-4">
-        Use ↑/↓ or W/S to move your paddle
+        ${t('game.useArrows')}
       </p>
     </div>
   `;
