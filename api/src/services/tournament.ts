@@ -3,6 +3,7 @@
  * Handles tournament logic, bracket generation, and matchmaking
  */
 
+import crypto from 'crypto';
 import db from '../db/index.js';
 import { updateStatsAfterMatch } from './stats.js';
 
@@ -520,17 +521,26 @@ export function getBracket(tournamentId: number) {
 
 /**
  * Handle user deletion/anonymization in tournaments (GDPR compliance)
- * - Updates aliases to Guest_xxx format
+ * - Updates aliases to unique format per participant (Deleted_xxx)
  * - Auto-forfeits any pending matches (opponent wins by walkover)
  * - Marks user as eliminated in active tournaments
  */
 export function handleUserDeletion(userId: number, newAlias: string): void {
-	// 1. Update alias in tournament_participants table
-	db.prepare(`
-		UPDATE tournament_participants 
-		SET alias = ? 
-		WHERE user_id = ?
-	`).run(newAlias, userId);
+	// 1. Update alias in tournament_participants table with unique random alias per participant
+	// Using random hex ID to ensure uniqueness and anonymity (UNIQUE constraint on tournament_id, alias)
+	const participants = db.prepare(`
+		SELECT id, tournament_id FROM tournament_participants WHERE user_id = ?
+	`).all(userId) as { id: number; tournament_id: number }[];
+
+	for (const participant of participants) {
+		const randomId = crypto.randomBytes(4).toString('hex');
+		const uniqueAlias = `${newAlias}_${randomId}`;
+		db.prepare(`
+			UPDATE tournament_participants 
+			SET alias = ? 
+			WHERE id = ?
+		`).run(uniqueAlias, participant.id);
+	}
 
 	// 2. Update alias in matches table (both player1 and player2)
 	db.prepare(`
