@@ -1,0 +1,10 @@
+export const CANVAS_WIDTH = 800;
+export const CANVAS_HEIGHT = 400;
+export const PADDLE_HEIGHT = 60;
+export const PADDLE_WIDTH = 10;
+export const BALL_SIZE = 10;
+export const PADDLE_SPEED = 8;
+export const BALL_SPEED = 7;
+export const BALL_SPEED_INCREMENT = 0.3;
+export const BALL_MAX_SPEED = 15;
+export const WINNING_SCORE = 5;

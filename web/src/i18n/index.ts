@@ -124,6 +124,9 @@ const en: Translations = {
 		copied: 'Copied!',
 		waitingPlayer2: 'Waiting for Player 2 to join...',
 		youArePlayer: 'You are Player',
+		pressSpaceToContinue: 'Press SPACE to continue',
+		pressSpaceToMenu: 'Press SPACE to return to menu',
+		errorSavingResult: 'Error saving result, but you won!',
 	},
 	tournament: {
 		title: 'Tournaments',
@@ -490,6 +493,9 @@ const tr: Translations = {
 		copied: 'Kopyalandı!',
 		waitingPlayer2: "Oyuncu 2'nin katılması bekleniyor...",
 		youArePlayer: 'Siz Oyuncu',
+		pressSpaceToContinue: 'Devam etmek için SPACE basın',
+		pressSpaceToMenu: 'Menüye dönmek için SPACE basın',
+		errorSavingResult: 'Sonuç kaydedilirken hata, ama kazandın!',
 	},
 	tournament: {
 		title: 'Turnuvalar',
@@ -856,6 +862,9 @@ const de: Translations = {
 		copied: 'Kopiert!',
 		waitingPlayer2: 'Warte auf Spieler 2...',
 		youArePlayer: 'Du bist Spieler',
+		pressSpaceToContinue: 'Drücke LEERTASTE zum Fortfahren',
+		pressSpaceToMenu: 'Drücke LEERTASTE um zum Menü zurückzukehren',
+		errorSavingResult: 'Fehler beim Speichern, aber du hast gewonnen!',
 	},
 	tournament: {
 		title: 'Turniere',
