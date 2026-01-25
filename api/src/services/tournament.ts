@@ -1,7 +1,4 @@
-/**
- * Tournament Service
- * Handles tournament logic, bracket generation, and matchmaking
- */
+// Tournament Service - Handles tournament logic, bracket generation, and matchmaking
 
 import crypto from 'crypto';
 import db from '../db/index.js';
@@ -12,7 +9,7 @@ export interface Tournament {
 	name: string;
 	status: 'pending' | 'active' | 'completed' | 'cancelled';
 	max_players: number;
-	current_round: number;
+	current_round: number; 
 	created_by: number; // Mandatory for tournaments
 	winner_id: number | null;
 	started_at: string | null;
@@ -46,9 +43,7 @@ export interface TournamentMatch {
 	status: 'pending' | 'playing' | 'completed' | 'cancelled';
 }
 
-/**
- * Create a new tournament
- */
+// Create a new tournament entry in the database
 export function createTournament(name: string, maxPlayers: number, createdBy?: number): Tournament {
 	const stmt = db.prepare(`
     INSERT INTO tournaments (name, max_players, created_by)
@@ -59,17 +54,13 @@ export function createTournament(name: string, maxPlayers: number, createdBy?: n
 	return getTournamentById(result.lastInsertRowid as number)!;
 }
 
-/**
- * Get tournament by ID
- */
+// Get tournament details by ID
 export function getTournamentById(id: number): Tournament | null {
 	const stmt = db.prepare('SELECT * FROM tournaments WHERE id = ?');
 	return stmt.get(id) as Tournament | null;
 }
 
-/**
- * Get all tournaments
- */
+// Get all tournaments with optional status filter
 export function getAllTournaments(status?: string): Tournament[] {
 	if (status) {
 		const stmt = db.prepare('SELECT * FROM tournaments WHERE status = ? ORDER BY created_at DESC');
@@ -79,9 +70,7 @@ export function getAllTournaments(status?: string): Tournament[] {
 	return stmt.all() as Tournament[];
 }
 
-/**
- * Join tournament with system username
- */
+// Add user to tournament with validation and seed assignment
 export function joinTournament(tournamentId: number, userId: number): TournamentParticipant | null {
 	const tournament = getTournamentById(tournamentId);
 	if (!tournament || tournament.status !== 'pending') {
@@ -105,7 +94,7 @@ export function joinTournament(tournamentId: number, userId: number): Tournament
 	const userJoined = participants.some(p => p.user_id === userId);
 	if (userJoined) {
 		return null;
-	}
+	} 
 
 	const stmt = db.prepare(`
     INSERT INTO tournament_participants (tournament_id, user_id, alias, seed)
@@ -126,9 +115,7 @@ export function joinTournament(tournamentId: number, userId: number): Tournament
 	};
 }
 
-/**
- * Remove participant from tournament
- */
+// Remove a participant from a pending tournament
 export function removeParticipant(tournamentId: number, userId: number): boolean {
 	const tournament = getTournamentById(tournamentId);
 	if (!tournament || tournament.status !== 'pending') {
@@ -141,9 +128,7 @@ export function removeParticipant(tournamentId: number, userId: number): boolean
 	return result.changes > 0;
 }
 
-/**
- * Get tournament participants with current usernames
- */
+// Get tournament participants with their current usernames
 export function getParticipants(tournamentId: number): TournamentParticipant[] {
 	// Join with users table to get current username instead of cached alias
 	const stmt = db.prepare(`
@@ -162,9 +147,7 @@ export function getParticipants(tournamentId: number): TournamentParticipant[] {
 	}));
 }
 
-/**
- * Start tournament and generate bracket
- */
+// Start tournament, generate bracket, and update status to active
 export function startTournament(tournamentId: number): boolean {
 	const tournament = getTournamentById(tournamentId);
 	if (!tournament || tournament.status !== 'pending') {
@@ -190,9 +173,7 @@ export function startTournament(tournamentId: number): boolean {
 	return true;
 }
 
-/**
- * Generate single elimination bracket
- */
+// Generate single elimination bracket with shuffled participants and bye handling
 function generateBracket(tournamentId: number, participants: TournamentParticipant[]): void {
 	// Shuffle participants for random matchups
 	const shuffled = [...participants].sort(() => Math.random() - 0.5);
@@ -267,9 +248,7 @@ function generateBracket(tournamentId: number, participants: TournamentParticipa
 	}
 }
 
-/**
- * Get tournament matches with current usernames
- */
+// Get all tournament matches with current player usernames
 export function getTournamentMatches(tournamentId: number): TournamentMatch[] {
 	// Join with users table to get current usernames instead of cached aliases
 	const stmt = db.prepare(`
@@ -295,9 +274,7 @@ export function getTournamentMatches(tournamentId: number): TournamentMatch[] {
 	}));
 }
 
-/**
- * Get current match (next pending match)
- */
+// Get the next pending match in a specific tournament
 export function getCurrentMatch(tournamentId: number): TournamentMatch | null {
 	const stmt = db.prepare(`
     SELECT * FROM matches 
@@ -308,17 +285,13 @@ export function getCurrentMatch(tournamentId: number): TournamentMatch | null {
 	return stmt.get(tournamentId) as TournamentMatch | null;
 }
 
-/**
- * Get match by ID
- */
+// Get specific match details by ID
 export function getMatchById(matchId: number): TournamentMatch | null {
 	const stmt = db.prepare('SELECT * FROM matches WHERE id = ?');
 	return stmt.get(matchId) as TournamentMatch | null;
 }
 
-/**
- * Record match result
- */
+// Record match scores, eliminate loser, and advance winner to next round
 export function recordMatchResult(
 	matchId: number,
 	player1Score: number,
@@ -366,10 +339,7 @@ export function recordMatchResult(
 	return true;
 }
 
-/**
- * Record tournament match forfeit (when a player disconnects)
- * This is called from RoomManager when a player disconnects during a tournament match
- */
+// Record tournament match forfeit due to disconnection
 export function recordTournamentForfeit(
 	matchId: number,
 	player1Score: number,
@@ -380,9 +350,7 @@ export function recordTournamentForfeit(
 	return recordMatchResult(matchId, player1Score, player2Score);
 }
 
-/**
- * Advance winner to next round
- */
+// Move match winner to the assigned slot in the next round or end tournament
 function advanceWinner(
 	tournamentId: number,
 	currentRound: number,
@@ -458,9 +426,7 @@ function advanceWinner(
 	}
 }
 
-/**
- * Check for bye scenarios in a round and auto-advance lone players
- */
+// Handle rounds where players have no opponent by auto-advancing them
 function checkAndProcessByes(tournamentId: number, roundNumber: number): void {
 	const matchesStmt = db.prepare(`
     SELECT * FROM matches 
@@ -495,9 +461,7 @@ function checkAndProcessByes(tournamentId: number, roundNumber: number): void {
 	}
 }
 
-/**
- * Get tournament bracket for display
- */
+// Get full tournament bracket data for frontend display
 export function getBracket(tournamentId: number) {
 	const matches = getTournamentMatches(tournamentId);
 	const participants = getParticipants(tournamentId);
@@ -519,15 +483,9 @@ export function getBracket(tournamentId: number) {
 	};
 }
 
-/**
- * Handle user deletion/anonymization in tournaments (GDPR compliance)
- * - Updates aliases to unique format per participant (Deleted_xxx)
- * - Auto-forfeits any pending matches (opponent wins by walkover)
- * - Marks user as eliminated in active tournaments
- */
+// Handle user deletion or anonymization for GDPR compliance while maintaining bracket integrity
 export function handleUserDeletion(userId: number, newAlias: string): void {
-	// 1. Update alias in tournament_participants table with unique random alias per participant
-	// Using random hex ID to ensure uniqueness and anonymity (UNIQUE constraint on tournament_id, alias)
+	// Update participant aliases to a unique "Deleted_xxx" format to ensure uniqueness and anonymity
 	const participants = db.prepare(`
 		SELECT id, tournament_id FROM tournament_participants WHERE user_id = ?
 	`).all(userId) as { id: number; tournament_id: number }[];
@@ -542,7 +500,7 @@ export function handleUserDeletion(userId: number, newAlias: string): void {
 		`).run(uniqueAlias, participant.id);
 	}
 
-	// 2. Update alias in matches table (both player1 and player2)
+	// Update alias in matches table for both player slots
 	db.prepare(`
 		UPDATE matches 
 		SET player1_alias = ? 
@@ -555,7 +513,7 @@ export function handleUserDeletion(userId: number, newAlias: string): void {
 		WHERE player2_id = ?
 	`).run(newAlias, userId);
 
-	// 3. Find and auto-forfeit pending tournament matches where this user is a player
+	// Find and auto-forfeit pending tournament matches where this user is a player (opponent wins 5-0)
 	const pendingMatches = db.prepare(`
 		SELECT * FROM matches 
 		WHERE (player1_id = ? OR player2_id = ?) 
@@ -607,9 +565,7 @@ export function handleUserDeletion(userId: number, newAlias: string): void {
 	`).run(userId);
 }
 
-/**
- * Public wrapper for advanceWinner (used by handleUserDeletion)
- */
+// Public wrapper for advancing winners (used during user deletion/GDPR cleanup)
 function advanceWinnerPublic(
 	tournamentId: number,
 	currentRound: number,

@@ -1,7 +1,4 @@
-/**
- * Tournament Routes
- * API endpoints for tournament management
- */
+// Tournament Routes - API endpoints for tournament management
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import * as tournamentService from '../services/tournament.js';
@@ -23,18 +20,14 @@ interface RecordResultBody {
 }
 
 export default async function tournamentRoutes(fastify: FastifyInstance) {
-	/**
-	 * GET / - List all tournaments
-	 */
+	// GET / - List all tournaments
 	fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
 		const { status } = request.query as { status?: string };
 		const tournaments = tournamentService.getAllTournaments(status);
 		return reply.send({ tournaments });
 	});
 
-	/**
-	 * POST / - Create new tournament
-	 */
+	// POST / - Create new tournament
 	fastify.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
 		const authHeader = request.headers.authorization;
 		if (!authHeader?.startsWith('Bearer ')) {
@@ -57,9 +50,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.status(201).send({ tournament });
 	});
 
-	/**
-	 * GET /:id - Get tournament details
-	 */
+	// GET /:id - Get tournament details
 	fastify.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
 		const { id } = request.params as { id: string };
 		const tournament = tournamentService.getTournamentById(parseInt(id));
@@ -72,9 +63,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.send({ tournament, participants });
 	});
 
-	/**
-	 * GET /:id/bracket - Get tournament bracket
-	 */
+	// GET /:id/bracket - Get tournament bracket
 	fastify.get('/:id/bracket', async (request: FastifyRequest, reply: FastifyReply) => {
 		const { id } = request.params as { id: string };
 		const bracket = tournamentService.getBracket(parseInt(id));
@@ -86,9 +75,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.send(bracket);
 	});
 
-	/**
-	 * POST /:id/join - Join tournament
-	 */
+	// POST /:id/join - Join tournament
 	fastify.post('/:id/join', async (request: FastifyRequest, reply: FastifyReply) => {
 		const authHeader = request.headers.authorization;
 		if (!authHeader?.startsWith('Bearer ')) {
@@ -118,9 +105,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.status(201).send({ participant });
 	});
 
-	/**
-	 * DELETE /:id/participants/:userId - Remove participant
-	 */
+	// DELETE /:id/participants/:userId - Remove participant
 	fastify.delete('/:id/participants/:userId', async (request: FastifyRequest, reply: FastifyReply) => {
 		const authHeader = request.headers.authorization;
 		if (!authHeader?.startsWith('Bearer ')) {
@@ -159,9 +144,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.send({ message: 'Participant removed' });
 	});
 
-	/**
-	 * POST /:id/start - Start tournament
-	 */
+	// POST /:id/start - Start tournament
 	fastify.post('/:id/start', async (request: FastifyRequest, reply: FastifyReply) => {
 		const authHeader = request.headers.authorization;
 		if (!authHeader?.startsWith('Bearer ')) {
@@ -201,9 +184,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.send({ message: 'Tournament started', bracket });
 	});
 
-	/**
-	 * GET /:id/current-match - Get current match to play
-	 */
+	// GET /:id/current-match - Get current match to play
 	fastify.get('/:id/current-match', async (request: FastifyRequest, reply: FastifyReply) => {
 		const { id } = request.params as { id: string };
 		const match = tournamentService.getCurrentMatch(parseInt(id));
@@ -215,9 +196,7 @@ export default async function tournamentRoutes(fastify: FastifyInstance) {
 		return reply.send({ match });
 	});
 
-	/**
-	 * POST /:id/match/:matchId/result - Record match result
-	 */
+	// POST /:id/match/:matchId/result - Record match result
 	fastify.post('/:id/match/:matchId/result', async (request: FastifyRequest, reply: FastifyReply) => {
 		const { id, matchId } = request.params as { id: string; matchId: string };
 		const { player1Score, player2Score } = request.body as RecordResultBody;

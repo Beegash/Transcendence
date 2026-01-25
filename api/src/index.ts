@@ -14,6 +14,7 @@ import tournamentRoutes from "./routes/tournament.js";
 import statsRoutes from "./routes/stats.js";
 import presenceRoutes from "./routes/presence.js";
 
+// Initialize Fastify application with built-in logger enabled
 const app = Fastify({ logger: true });
 
 // Global error handler - prevents stack trace leaks and provides consistent error responses
@@ -37,10 +38,10 @@ app.setErrorHandler((error, request, reply) => {
 
   // Handle known HTTP errors
   const statusCode = error.statusCode || 500;
-  
+
   // Don't leak internal error messages in production
-  const message = statusCode >= 500 
-    ? 'Internal server error' 
+  const message = statusCode >= 500
+    ? 'Internal server error'
     : error.message || 'An error occurred';
 
   return reply.status(statusCode).send({ error: message });
@@ -51,27 +52,32 @@ app.setNotFoundHandler((request, reply) => {
   reply.status(404).send({ error: 'Route not found' });
 });
 
-// Plugins
+// Apply security headers via Helmet (CSP disabled for dev and WebSocket compatibility)
 await app.register(import("@fastify/helmet"), {
-  contentSecurityPolicy: false, // Disable for WebSocket compatibility
+  contentSecurityPolicy: false,
 });
+// Enable CORS for frontend communication with credentials support
 await app.register(import("@fastify/cors"), {
   origin: true,
   credentials: true,
 });
+// Rate limiting (500 requests per minute) to protect against abuse and DDoS
 await app.register(import("@fastify/rate-limit"), {
   max: 500,
   timeWindow: '1 minute'
 });
+// Cookie parsing for HTTP-only session management
 await app.register(fastifyCookie, {
   secret: process.env.JWT_SECRET || 'cookie-secret',
 });
+// Handle file uploads (e.g., user avatars) with 5MB limit
 await app.register(fastifyMultipart, {
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 5 * 1024 * 1024,
     files: 1,
   },
 });
+// Enable WebSocket support for real-time game and presence features
 await app.register(fastifyWebsocket);
 
 // Routes

@@ -1,14 +1,4 @@
-/**
- * AI Player
- * AI opponent that refreshes view once per second and anticipates bounces
- * 
- * Per project requirements:
- * - "The AI can only refresh its view of the game once per second"
- * - "Requiring it to anticipate bounces and other actions"
- * - "You must simulate keyboard input" - AI behaves like human
- * - "It must have the capability to win occasionally"
- * - A* algorithm is NOT permitted
- */
+// AI Player - Opponent that refreshes once per second and anticipates bounces (simulates human keyboard input without A*)
 
 import {
 	CANVAS_WIDTH,
@@ -23,10 +13,7 @@ export class AIPlayer {
 	private targetY: number = CANVAS_HEIGHT / 2;
 	private lastUpdateTime: number = 0;
 
-	/**
-	 * Called every 1 second (per project requirements)
-	 * AI analyzes game state and decides where to move
-	 */
+	// Called every 1s (per project requirements) to analyze game state and decide movement
 	updateView(room: GameRoom): void {
 		if (!room.player2 || !room.player2.isAI) return;
 		if (room.state.status !== 'playing') return;
@@ -49,10 +36,7 @@ export class AIPlayer {
 		this.lastUpdateTime = Date.now();
 	}
 
-	/**
-	 * Predict where ball will intersect with AI paddle's X position
-	 * This simulates "anticipating bounces" as required by project
-	 */
+	// Predict where ball will intersect with AI paddle's X position to simulate anticipating bounces
 	private predictBallPosition(ball: Ball): number {
 		// If ball is moving away from AI (toward player 1), go to center
 		if (ball.vx < 0) {
@@ -76,9 +60,7 @@ export class AIPlayer {
 		return predictedY;
 	}
 
-	/**
-	 * Simulate ball bouncing off top and bottom walls
-	 */
+	// Simulate ball bouncing off top and bottom walls to keep Y within bounds
 	private simulateBounces(y: number): number {
 		// Keep bouncing until Y is within bounds
 		while (y < 0 || y > CANVAS_HEIGHT - BALL_SIZE) {
@@ -92,11 +74,7 @@ export class AIPlayer {
 		return y;
 	}
 
-	/**
-	 * Get keyboard-like input based on AI's decision
-	 * Called every frame - simulates holding up/down key
-	 * Returns paddle movement: -1 (up), 0 (stay), 1 (down)
-	 */
+	// Get keyboard-like input (-1 up, 0 stay, 1 down) based on AI decision (called every frame)
 	getInput(currentPaddleY: number): number {
 		const paddleCenter = currentPaddleY + PADDLE_HEIGHT / 2;
 		const difference = this.targetY - paddleCenter;
@@ -110,10 +88,7 @@ export class AIPlayer {
 		return difference > 0 ? 1 : -1;
 	}
 
-	/**
-	 * Apply AI movement to paddle (simulates keyboard input)
-	 * Called every game frame
-	 */
+	// Apply AI movement to paddleFairly limited by PADDLE_SPEED (simulates keyboard input)
 	applyMovement(room: GameRoom): void {
 		if (!room.player2 || !room.player2.isAI) return;
 		if (room.state.status !== 'playing') return;

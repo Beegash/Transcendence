@@ -1,10 +1,5 @@
-/**
- * Presence Routes (WebSocket)
- * Handles user online status tracking via persistent WebSocket connection
- * 
- * Users are marked online when they connect and offline when they disconnect.
- * This handles browser close, tab close, and logout scenarios.
- */
+// Presence Routes (WebSocket) - Handles user online status tracking via persistent connection
+// Users are marked online when they connect and offline when they disconnect (handles close and logout)
 
 import { FastifyInstance } from 'fastify';
 import type { WebSocket } from 'ws';
@@ -18,19 +13,13 @@ const connectedUsers = new Map<number, Set<WebSocket>>();
 const HEARTBEAT_INTERVAL = 30000;
 
 export default async function presenceRoutes(fastify: FastifyInstance) {
-	/**
-	 * GET /online-users
-	 * Get list of online user IDs (for debugging/admin)
-	 */
+	// GET /online-users - Get list of online user IDs (for debugging/admin)
 	fastify.get('/online-users', async (_request, reply) => {
 		const onlineUserIds = Array.from(connectedUsers.keys());
 		return reply.send({ onlineUsers: onlineUserIds, count: onlineUserIds.length });
 	});
 
-	/**
-	 * WebSocket /ws - Presence tracking endpoint
-	 * Clients should connect here after authentication to maintain online status
-	 */
+	// WebSocket /ws - Presence tracking endpoint (clients connect here to maintain status)
 	fastify.get('/ws', { websocket: true }, (connection, _req) => {
 		const ws = connection.socket;
 		let userId: number | undefined;
@@ -63,7 +52,7 @@ export default async function presenceRoutes(fastify: FastifyInstance) {
 					const payload = verifyToken(message.token);
 					if (payload) {
 						userId = payload.userId;
-						
+
 						// Add to connected users
 						if (!connectedUsers.has(userId)) {
 							connectedUsers.set(userId, new Set());
@@ -80,8 +69,8 @@ export default async function presenceRoutes(fastify: FastifyInstance) {
 						startHeartbeat();
 
 						// Send confirmation
-						ws.send(JSON.stringify({ 
-							type: 'authenticated', 
+						ws.send(JSON.stringify({
+							type: 'authenticated',
 							userId,
 							message: 'Online status tracking active'
 						}));
@@ -113,15 +102,15 @@ export default async function presenceRoutes(fastify: FastifyInstance) {
 				const userConnections = connectedUsers.get(userId);
 				if (userConnections) {
 					userConnections.delete(ws);
-					
+
 					// Only mark offline if no other connections exist
 					if (userConnections.size === 0) {
 						connectedUsers.delete(userId);
-						
+
 						// Update database - mark user as offline
 						db.prepare('UPDATE users SET is_online = FALSE, last_seen_at = CURRENT_TIMESTAMP WHERE id = ?')
 							.run(userId);
-						
+
 						console.log(`[Presence] User ${userId} marked offline (all connections closed)`);
 					} else {
 						console.log(`[Presence] User ${userId} still has ${userConnections.size} active connection(s)`);
@@ -151,18 +140,12 @@ export default async function presenceRoutes(fastify: FastifyInstance) {
 	});
 }
 
-/**
- * Check if a user is currently online
- * Can be used by other modules
- */
+// Check if a user is currently online (can be used by other modules)
 export function isUserOnline(userId: number): boolean {
 	return connectedUsers.has(userId) && connectedUsers.get(userId)!.size > 0;
 }
 
-/**
- * Get all online user IDs
- * Can be used by other modules
- */
+// Get all online user IDs (can be used by other modules)
 export function getOnlineUserIds(): number[] {
 	return Array.from(connectedUsers.keys());
 }

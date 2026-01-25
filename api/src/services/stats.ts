@@ -1,7 +1,4 @@
-/**
- * Stats Service
- * Provides user and game statistics
- */
+// Stats Service - Provides user and game statistics
 
 import db from '../db/index.js';
 
@@ -50,9 +47,7 @@ export interface GlobalStats {
 	active_tournaments: number;
 }
 
-/**
- * Get or create user stats
- */
+// Get or create user stats entry in the database
 export function getUserStats(userId: number): UserStats | null {
 	// First ensure user_stats row exists
 	const checkStmt = db.prepare('SELECT * FROM user_stats WHERE user_id = ?');
@@ -89,9 +84,7 @@ export function getUserStats(userId: number): UserStats | null {
 	};
 }
 
-/**
- * Get match history for a user
- */
+// Get recent match history for a specific user (defaults to 20 matches)
 export function getMatchHistory(userId: number, limit = 20): MatchHistory[] {
 	const stmt = db.prepare(`
     SELECT 
@@ -136,9 +129,7 @@ export function getMatchHistory(userId: number, limit = 20): MatchHistory[] {
 	return stmt.all(userId, userId, userId, userId, userId, userId, limit) as MatchHistory[];
 }
 
-/**
- * Get leaderboard
- */
+// Get top players ranked by wins and win rate
 export function getLeaderboard(limit = 10): LeaderboardEntry[] {
 	const stmt = db.prepare(`
     SELECT 
@@ -168,9 +159,7 @@ export function getLeaderboard(limit = 10): LeaderboardEntry[] {
 	}));
 }
 
-/**
- * Get global platform stats
- */
+// Get global platform statistics (totals of users, matches, and tournaments)
 export function getGlobalStats(): GlobalStats {
 	const usersStmt = db.prepare('SELECT COUNT(*) as count FROM users WHERE is_anonymized = 0');
 	const matchesStmt = db.prepare('SELECT COUNT(*) as count FROM matches WHERE status = ?');
@@ -192,9 +181,7 @@ export function getGlobalStats(): GlobalStats {
 	};
 }
 
-/**
- * Update user stats after a match
- */
+// Update user win/loss and point stats after a match concludes
 export function updateStatsAfterMatch(
 	winnerId: number | null,
 	loserId: number | null,
@@ -236,9 +223,7 @@ export function updateStatsAfterMatch(
 	}
 }
 
-/**
- * Record match in database
- */
+// Record match details in database and update participating player stats
 export function recordMatch(
 	player1Id: number | null,
 	player2Id: number | null,
@@ -278,10 +263,7 @@ export function recordMatch(
 	return result.lastInsertRowid as number;
 }
 
-/**
- * Sync all user stats from completed matches
- * This recalculates all stats from the matches table
- */
+// Sync all user stats from scratch by recalculating from completed matches and tournaments
 export function syncAllStats(): { synced: number; tournamentsUpdated: number } {
 	// First, reset all user stats
 	db.prepare(`

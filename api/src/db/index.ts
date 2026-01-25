@@ -8,7 +8,9 @@ const __dirname = dirname(__filename);
 
 const db = new Database(process.env.DATABASE_PATH || "/data/app.db");
 
+// Enable WAL mode for better concurrency allowing simultaneous reads and writes without blocking
 db.pragma("journal_mode = WAL");
+// Set 5s busy timeout to prevent "database is locked" errors during concurrent writes
 db.pragma("busy_timeout = 5000");
 
 import { readdirSync } from "fs";
@@ -20,9 +22,11 @@ export async function initDatabase() {
             .filter(f => f.endsWith(".sql"))
             .sort();
 
+        // Automatically apply all SQL migrations from the migrations directory in alphabetical order
         for (const file of files) {
             console.log(`Running migration: ${file}`);
             const migrationSQL = readFileSync(join(migrationsDir, file), "utf-8");
+            // Execute SQL migration for schema setup
             db.exec(migrationSQL);
         }
 

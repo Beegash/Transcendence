@@ -1,7 +1,4 @@
-/**
- * Auth Middleware
- * JWT Authentication for protected routes
- */
+// Auth Middleware - JWT Authentication for protected routes
 
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, JwtPayload } from '../services/auth.js';
@@ -13,10 +10,7 @@ declare module 'fastify' {
 	}
 }
 
-/**
- * Authentication middleware
- * Verifies JWT token from cookie or Authorization header
- */
+// Authentication middleware - Verifies JWT token from cookie or Authorization header
 export async function authMiddleware(
 	request: FastifyRequest,
 	reply: FastifyReply
@@ -47,10 +41,7 @@ export async function authMiddleware(
 	request.user = payload;
 }
 
-/**
- * Optional auth middleware
- * Does not fail if no token, just attaches user if present
- */
+// Optional auth middleware - Does not fail if no token, just attaches user if present
 export async function optionalAuthMiddleware(
 	request: FastifyRequest,
 	_reply: FastifyReply

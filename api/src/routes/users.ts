@@ -1,7 +1,4 @@
-/**
- * User Routes
- * Handles user profile operations
- */
+// User Routes - Handles user profile operations
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import db from '../db/index.js';
@@ -25,10 +22,7 @@ interface Notification {
 }
 
 export default async function userRoutes(fastify: FastifyInstance) {
-	/**
-	 * GET /:id
-	 * Get user profile by ID
-	 */
+	// GET /:id - Get user profile by ID
 	fastify.get<{ Params: { id: string } }>(
 		'/:id',
 		{ preHandler: optionalAuthMiddleware },
@@ -53,9 +47,10 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				return reply.status(404).send({ error: 'User not found' });
 			}
 
-			// Check if this is the current user's own profile
+			// Check if this is the current user's own profile to return private info like email
 			const isOwnProfile = request.user?.userId === userId;
 
+			// Basic public profile data
 			const response: Record<string, unknown> = {
 				id: user.id,
 				username: user.username,
@@ -77,7 +72,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				},
 			};
 
-			// Include email only for own profile
+			// Include private fields like email and preferred language only for own profile
 			if (isOwnProfile) {
 				const fullUser = db.prepare('SELECT email, language FROM users WHERE id = ?').get(userId) as {
 					email: string;
@@ -93,10 +88,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /:id
-	 * Update user profile
-	 */
+	// PUT /:id - Update user profile
 	fastify.put<{ Params: { id: string }; Body: UpdateProfileBody }>(
 		'/:id',
 		{ preHandler: authMiddleware },
@@ -108,7 +100,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 			if (isNaN(userId)) {
 				return reply.status(400).send({ error: 'Invalid user ID' });
-			}
+			} 
 
 			// Users can only update their own profile
 			if (request.user?.userId !== userId) {
@@ -179,13 +171,10 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /:id/password
-	 * Change user password
-	 */
+	// PUT /:id/password - Change authenticated user's password with verification
 	fastify.put<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>(
 		'/:id/password',
-		{ preHandler: authMiddleware },
+		{ preHandler: authMiddleware }, 
 		async (
 			request: FastifyRequest<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>,
 			reply: FastifyReply
@@ -244,10 +233,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /:id/matches
-	 * Get user's match history
-	 */
+	// GET /:id/matches - Get completed match history for a specific user
 	fastify.get<{ Params: { id: string }; Querystring: { limit?: string } }>(
 		'/:id/matches',
 		async (
@@ -302,10 +288,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /:id/friends
-	 * Get user's friend list
-	 */
+	// GET /:id/friends - Get list of accepted friends for a specific user
 	fastify.get<{ Params: { id: string } }>(
 		'/:id/friends',
 		{ preHandler: authMiddleware },
@@ -338,10 +321,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /:id/friends/requests
-	 * Get pending friend requests (received)
-	 */
+	// GET /:id/friends/requests - Get all pending incoming friend requests
 	fastify.get<{ Params: { id: string } }>(
 		'/:id/friends/requests',
 		{ preHandler: authMiddleware },
@@ -367,10 +347,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /:id/friends
-	 * Send friend request
-	 */
+	// POST /:id/friends - Send a new friend request to another user
 	fastify.post<{ Params: { id: string }; Body: { friendId: number } }>(
 		'/:id/friends',
 		{ preHandler: authMiddleware },
@@ -428,10 +405,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /:id/friends/:friendId
-	 * Accept or reject friend request
-	 */
+	// PUT /:id/friends/:friendId - Accept or reject a pending friend request
 	fastify.put<{ Params: { id: string; friendId: string }; Body: { action: 'accept' | 'reject' } }>(
 		'/:id/friends/:friendId',
 		{ preHandler: authMiddleware },
@@ -481,10 +455,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * DELETE /:id/friends/:friendId
-	 * Remove friend
-	 */
+	// DELETE /:id/friends/:friendId - Remove an existing friend relationship
 	fastify.delete<{ Params: { id: string; friendId: string } }>(
 		'/:id/friends/:friendId',
 		{ preHandler: authMiddleware },
@@ -513,10 +484,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /:id/avatar
-	 * Upload avatar image
-	 */
+	// POST /:id/avatar - Upload and update user profile picture (5MB limit)
 	fastify.post<{ Params: { id: string } }>(
 		'/:id/avatar',
 		{ preHandler: authMiddleware },
@@ -540,10 +508,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
 					return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
 				}
 
-				// Read file buffer
+				// Read file buffer into memory and generate unique filename with timestamp to prevent caching issues
 				const buffer = await data.toBuffer();
-
-				// Generate filename - normalize both jpeg and jpg MIME types to .jpg extension
 				let ext = data.mimetype.split('/')[1];
 				if (ext === 'jpeg' || ext === 'jpg') {
 					ext = 'jpg';
@@ -588,10 +554,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * DELETE /:id/avatar
-	 * Reset avatar to default and delete old file from disk (GDPR compliance)
-	 */
+	// DELETE /:id/avatar - Reset avatar to default and delete file from disk
 	fastify.delete<{ Params: { id: string } }>(
 		'/:id/avatar',
 		{ preHandler: authMiddleware },
@@ -633,10 +596,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /search
-	 * Search users by username or display name
-	 */
+	// GET /search - Search public users by username or display name (min 2 chars)
 	fastify.get<{ Querystring: { q: string } }>(
 		'/search',
 		{ preHandler: authMiddleware },
@@ -660,10 +620,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /notifications
-	 * Get current user's notifications
-	 */
+	// GET /notifications - Get list of current user's notifications (last 50)
 	fastify.get(
 		'/notifications',
 		{ preHandler: authMiddleware },
@@ -686,10 +643,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /notifications/:id/read
-	 * Mark notification as read
-	 */
+	// PUT /notifications/:id/read - Mark a specific notification as seen
 	fastify.put<{ Params: { id: string } }>(
 		'/notifications/:id/read',
 		{ preHandler: authMiddleware },
@@ -709,10 +663,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /relationship/:targetId
-	 * Check relationship status between current user and target user
-	 */
+	// GET /relationship/:targetId - Check relationship status with another user
 	fastify.get<{ Params: { targetId: string } }>(
 		'/relationship/:targetId',
 		{ preHandler: authMiddleware },
@@ -752,10 +703,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /invite/:targetId
-	 * Send a game invitation to a friend
-	 */
+	// POST /invite/:targetId - Send a Pong game invitation to a friend
 	fastify.post<{ Params: { targetId: string } }>(
 		'/invite/:targetId',
 		{ preHandler: authMiddleware },

@@ -1,7 +1,4 @@
-/**
- * Auth Routes
- * Handles user registration, login, logout
- */
+// Auth Routes - Handles user registration, login, and logout operations
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'crypto';
@@ -27,18 +24,15 @@ interface LoginBody {
 	email: string;
 	password: string;
 }
-
+ 
 export default async function authRoutes(fastify: FastifyInstance) {
-	/**
-	 * POST /register
-	 * Create a new user account
-	 */
+	// POST /register - Create a new user account with validation
 	fastify.post<{ Body: RegisterBody }>(
 		'/register',
 		async (request: FastifyRequest<{ Body: RegisterBody }>, reply: FastifyReply) => {
 			const { username, email, password } = request.body;
 
-			// Validate input
+			// Ensure all required fields (username, email, password) are present in the request body
 			if (!username || !email || !password) {
 				return reply.status(400).send({ error: 'Username, email, and password are required' });
 			}
@@ -69,10 +63,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 				return reply.status(409).send({ error: 'Email or username already exists' });
 			}
 
-			// Hash password
+			// Securely hash the password and insert the new user record into the database
 			const passwordHash = await hashPassword(password);
-
-			// Create user
 			try {
 				const result = db
 					.prepare(
@@ -94,11 +86,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			}
 		}
 	);
-
-	/**
-	 * POST /login
-	 * Authenticate user and return JWT token
-	 */
+ 
+	// POST /login - Authenticate user and return JWT token in cookie and response
 	fastify.post<{ Body: LoginBody }>(
 		'/login',
 		async (request: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) => {
@@ -136,7 +125,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 				return reply.status(401).send({ error: 'Invalid email or password' });
 			}
 
-			// Update online status
+			// Update user status as online and refresh the last seen timestamp on successful login
 			db.prepare('UPDATE users SET is_online = TRUE, last_seen_at = CURRENT_TIMESTAMP WHERE id = ?').run(
 				user.id
 			);
@@ -172,10 +161,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /logout
-	 * Clear session and JWT cookie
-	 */
+	// POST /logout - Clear user session and JWT cookie
 	fastify.post('/logout', { preHandler: authMiddleware }, async (request, reply) => {
 		// Update online status
 		if (request.user) {
@@ -190,10 +176,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		return reply.send({ message: 'Logged out successfully' });
 	});
 
-	/**
-	 * GET /me
-	 * Get current authenticated user
-	 */
+	// GET /me - Get profile and stats for the currently authenticated user
 	fastify.get('/me', { preHandler: authMiddleware }, async (request, reply) => {
 		if (!request.user) {
 			return reply.status(401).send({ error: 'Not authenticated' });
@@ -231,11 +214,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		});
 	});
 
-	/**
-	 * DELETE /account
-	 * Permanently delete current user's account (GDPR Right to Erasure)
-	 * This completely removes the user and all associated data
-	 */
+	// DELETE /account - Permanently delete current user's account and all associated data (GDPR Right to Erasure)
 	fastify.delete('/account', { preHandler: authMiddleware }, async (request, reply) => {
 		if (!request.user) {
 			return reply.status(401).send({ error: 'Not authenticated' });
@@ -277,11 +256,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		}
 	});
 
-	/**
-	 * POST /anonymize
-	 * Anonymize user data (GDPR Right to be Forgotten - Soft Delete)
-	 * Retains stats but removes PII
-	 */
+	// POST /anonymize - Anonymize user data (GDPR Soft Delete) - Retains stats but removes PII
 	fastify.post('/anonymize', { preHandler: authMiddleware }, async (request, reply) => {
 		if (!request.user) {
 			return reply.status(401).send({ error: 'Not authenticated' });
@@ -341,10 +316,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		}
 	});
 
-	/**
-	 * GET /export-data
-	 * Export all user data (GDPR Right to Data Portability)
-	 */
+	// GET /export-data - Export all user data (GDPR Right to Data Portability)
 	fastify.get('/export-data', { preHandler: authMiddleware }, async (request, reply) => {
 		if (!request.user) {
 			return reply.status(401).send({ error: 'Not authenticated' });
