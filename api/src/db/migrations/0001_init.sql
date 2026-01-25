@@ -1,7 +1,4 @@
--- =============================================
--- ft_transcendence Database Schema
--- Version: 1.0
--- =============================================
+-- Init Database Schema
 
 -- Users table (extended for all modules)
 CREATE TABLE IF NOT EXISTS users (
@@ -37,9 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_oauth ON users(oauth_provider, oauth_id);
 
--- =============================================
 -- Friendships
--- =============================================
 CREATE TABLE IF NOT EXISTS friendships (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -54,9 +49,7 @@ CREATE TABLE IF NOT EXISTS friendships (
 CREATE INDEX IF NOT EXISTS idx_friendships_user ON friendships(user_id);
 CREATE INDEX IF NOT EXISTS idx_friendships_friend ON friendships(friend_id);
 
--- =============================================
 -- Tournaments
--- =============================================
 CREATE TABLE IF NOT EXISTS tournaments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -72,9 +65,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
 
 CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments(status);
 
--- =============================================
 -- Tournament Participants
--- =============================================
 CREATE TABLE IF NOT EXISTS tournament_participants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
@@ -91,9 +82,7 @@ CREATE TABLE IF NOT EXISTS tournament_participants (
 
 CREATE INDEX IF NOT EXISTS idx_tournament_participants_tournament ON tournament_participants(tournament_id);
 
--- =============================================
 -- Matches
--- =============================================
 CREATE TABLE IF NOT EXISTS matches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     
@@ -130,9 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_matches_player2 ON matches(player2_id);
 CREATE INDEX IF NOT EXISTS idx_matches_tournament ON matches(tournament_id);
 CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);
 
--- =============================================
--- User Stats (Denormalized for performance)
--- =============================================
+-- User Stats (Denormalized)
 CREATE TABLE IF NOT EXISTS user_stats (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     total_games INTEGER DEFAULT 0,
@@ -148,9 +135,7 @@ CREATE TABLE IF NOT EXISTS user_stats (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- =============================================
--- Sessions (for JWT refresh tokens)
--- =============================================
+-- Sessions (JWT Tokens)
 CREATE TABLE IF NOT EXISTS sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -164,9 +149,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(refresh_token);
 
--- =============================================
--- Audit Log (for GDPR compliance)
--- =============================================
+-- Audit Log (GDPR)
 CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
