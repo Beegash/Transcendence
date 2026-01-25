@@ -825,10 +825,10 @@ function startInviteGame(content: HTMLElement, roomId: string, invitedUserId?: n
 	console.log('[Game] Starting invite game for room:', roomId, 'invitedUserId:', invitedUserId);
 	content.innerHTML = `
     <div class="max-w-lg mx-auto px-4 py-8 text-center">
-      <h2 class="font-game text-2xl text-pong-primary mb-8">Game Invitation</h2>
+      <h2 class="font-game text-2xl text-pong-primary mb-8">${t('game.gameInvitation')}</h2>
       
       <div class="card mb-6">
-        <p class="text-white/80 mb-4">Joining private room: <span class="text-pong-secondary">${roomId}</span></p>
+        <p class="text-white/80 mb-4">${t('game.joiningPrivateRoom')} <span class="text-pong-secondary">${roomId}</span></p>
         <div class="loading-spinner mx-auto"></div>
       </div>
       
@@ -919,7 +919,7 @@ function startOnlineGame(content: HTMLElement, initialState: GameState): void {
       
       <p class="text-center text-white/60 text-sm mt-4">
         <span class="hidden md:inline">${t('game.useArrows')}</span>
-        <span class="md:hidden">Swipe up/down on screen to move your paddle</span>
+        <span class="md:hidden">${t('game.swipeInstructions')}</span>
       </p>
     </div>
   `;
@@ -1123,12 +1123,12 @@ function startOnlineTournament(content: HTMLElement, tournamentId: number, match
 
 	content.innerHTML = `
 		<div class="max-w-lg mx-auto px-4 py-8 text-center">
-			<h2 class="font-game text-2xl text-yellow-500 mb-8">Tournament Match</h2>
-			<div id="connection-status" class="text-center text-white/60 text-sm mb-4">Connecting to match...</div>
+			<h2 class="font-game text-2xl text-yellow-500 mb-8">${t('game.tournamentMatch')}</h2>
+			<div id="connection-status" class="text-center text-white/60 text-sm mb-4">${t('game.joiningMatch')}</div>
 			<div id="tournament-lobby-error" class="hidden bg-red-500/10 text-red-400 px-4 py-3 rounded-lg text-sm mb-4"></div>
 			
 			<div class="card p-6">
-				<p class="text-white/80 mb-2">Match ID:</p>
+				<p class="text-white/80 mb-2">${t('game.matchId')}:</p>
 				<p class="font-game text-2xl text-gradient">${matchId}</p>
 			</div>
 		</div>
@@ -1138,11 +1138,11 @@ function startOnlineTournament(content: HTMLElement, tournamentId: number, match
 	const errorDiv = document.getElementById('tournament-lobby-error')!;
 
 	gameSocket.connect().then(() => {
-		statusDiv.textContent = 'Connected. Joining match...';
+		statusDiv.textContent = t('game.connectedJoiningMatch');
 		// Send custom message to join tournament match
 		gameSocket.send({ type: 'join_tournament_match', roomId: matchId.toString() });
 	}).catch(() => {
-		statusDiv.textContent = 'Connection failed';
+		statusDiv.textContent = t('game.connectionFailed');
 		statusDiv.classList.add('text-red-400');
 	});
 

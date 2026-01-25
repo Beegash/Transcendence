@@ -21,8 +21,7 @@ export default defineConfig({
 		host: '0.0.0.0',
 		port: 5173,
 		strictPort: true,
-		// Cloudflare Tunnel veya Ngrok gibi araçlarla dışarıdan erişim sağlandığında 
-		// Vite'ın "Blocked request" hatası vermemesi için tüm hostlara izin veriyoruz.
+
 		allowedHosts: true,
 		watch: {
 			usePolling: true, // For Docker
