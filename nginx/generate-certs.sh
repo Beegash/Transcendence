@@ -8,7 +8,7 @@
 CERT_DIR="${CERT_DIR:-$(dirname "$0")/certs}"
 mkdir -p "$CERT_DIR"
 
-# Generate private key and certificate
+# Generate SSL private key and certificate
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout "$CERT_DIR/server.key" \
     -out "$CERT_DIR/server.crt" \
