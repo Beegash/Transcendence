@@ -1,7 +1,5 @@
-/**
- * ft_transcendence - API Client
- * Handles all HTTP requests to the backend
- */
+// ft_transcendence - API Client
+// Handles all HTTP requests to the backend
 
 const API_BASE = '/api';
 
@@ -16,7 +14,6 @@ interface RequestOptions {
 	method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 	body?: unknown;
 	headers?: Record<string, string>;
-	// If true, don't log errors to console (for expected failures like auth errors)
 	silent?: boolean;
 }
 
@@ -27,13 +24,11 @@ class ApiClient {
 		this.baseUrl = baseUrl;
 	}
 
-	/**
-	 * Make an API request
-	 * 
-	 * Note: 400/401 errors are EXPECTED for validation failures and auth errors.
-	 * These are not bugs - they indicate the API is working correctly.
-	 * The error message will be returned in the ApiResponse for the UI to display.
-	 */
+	// Make an API request
+	// Note: 400/401 errors are EXPECTED for validation failures and auth errors.
+	// These are not bugs - they indicate the API is working correctly.
+	// The error message will be returned in the ApiResponse for the UI to display.
+
 	async request<T>(endpoint: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
 		const { method = 'GET', body, headers = {}, silent = false } = options;
 

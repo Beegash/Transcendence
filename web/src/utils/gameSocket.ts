@@ -1,7 +1,5 @@
-/**
- * Game WebSocket Client
- * Handles WebSocket connection for multiplayer Pong
- */
+// Game WebSocket Client
+// Handles WebSocket connection for multiplayer Pong
 
 type MessageHandler = (data: GameMessage) => void;
 
@@ -35,9 +33,7 @@ class GameSocket {
 	private reconnectDelay = 1000;
 	private intentionalDisconnect = false;
 
-	/**
-	 * Connect to game WebSocket server
-	 */
+	// Connect to game WebSocket server
 	connect(): Promise<void> {
 		return new Promise((resolve, reject) => {
 			if (this.ws?.readyState === WebSocket.OPEN) {
@@ -100,9 +96,7 @@ class GameSocket {
 		});
 	}
 
-	/**
-	 * Disconnect from WebSocket
-	 */
+	// Disconnect from WebSocket
 	disconnect(): void {
 		this.intentionalDisconnect = true;
 		this.reconnectAttempts = 0;
@@ -113,9 +107,7 @@ class GameSocket {
 		this.handlers.clear();
 	}
 
-	/**
-	 * Send a message to the server
-	 */
+	// Send a message to the server
 	send(message: object): void {
 		if (this.ws?.readyState === WebSocket.OPEN) {
 			console.log('[GameSocket] Sending message:', message);
@@ -134,9 +126,7 @@ class GameSocket {
 		this.send({ type: 'create_room', roomId, invitedUserId });
 	}
 
-	/**
-	 * Create a room for AI game
-	 */
+	// Create a room for AI game
 	createAIRoom(): void {
 		this.send({ type: 'create_ai_room' });
 	}
@@ -145,30 +135,22 @@ class GameSocket {
 		this.send({ type: 'join_room', roomId: roomId });
 	}
 
-	/**
-	 * Send paddle position
-	 */
+	// Send paddle position
 	movePaddle(position: number): void {
 		this.send({ type: 'paddle_move', position });
 	}
 
-	/**
-	 * Signal ready to play
-	 */
+	// Signal ready to play
 	ready(): void {
 		this.send({ type: 'ready' });
 	}
 
-	/**
-	 * Resume ball after pause (space/touch pressed)
-	 */
+	// Resume ball after pause (space/touch pressed)
 	resumeBall(): void {
 		this.send({ type: 'resume_ball' });
 	}
 
-	/**
-	 * Subscribe to a message type
-	 */
+	// Subscribe to a message type
 	on(type: string, handler: MessageHandler): () => void {
 		if (!this.handlers.has(type)) {
 			this.handlers.set(type, new Set());
@@ -181,9 +163,7 @@ class GameSocket {
 		};
 	}
 
-	/**
-	 * Emit a message to handlers
-	 */
+	// Emit a message to handlers
 	private emit(message: GameMessage): void {
 		// Call specific type handlers
 		this.handlers.get(message.type)?.forEach((handler) => handler(message));
@@ -192,9 +172,7 @@ class GameSocket {
 		this.handlers.get('*')?.forEach((handler) => handler(message));
 	}
 
-	/**
-	 * Check if connected
-	 */
+	// Check if connected
 	isConnected(): boolean {
 		return this.ws?.readyState === WebSocket.OPEN;
 	}

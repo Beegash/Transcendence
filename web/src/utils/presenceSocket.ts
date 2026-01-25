@@ -1,11 +1,10 @@
-/**
- * Presence WebSocket Client
- * Maintains a persistent WebSocket connection to track user online status
- * 
- * - Connects automatically when user is authenticated
- * - Handles reconnection attempts
- * - Properly disconnects on logout or browser/tab close
- */
+// Presence WebSocket Client
+// Maintains a persistent WebSocket connection to track user online status
+//
+// - Connects automatically when user is authenticated
+// - Handles reconnection attempts
+// - Properly disconnects on logout or browser/tab close
+
 
 type PresenceMessageHandler = (data: PresenceMessage) => void;
 
@@ -123,10 +122,9 @@ class PresenceSocket {
 		});
 	}
 
-	/**
-	 * Disconnect from WebSocket
-	 * @param isLogout - If true, sends logout message before closing
-	 */
+	//Disconnect from WebSocket
+	//@param isLogout - If true, sends logout message before closing
+	  
 	disconnect(isLogout: boolean = false): void {
 		this.isIntentionalClose = true;
 		this.clearHeartbeatTimeout();
@@ -140,7 +138,7 @@ class PresenceSocket {
 					// Ignore errors during close
 				}
 			}
-			
+			   
 			this.ws.close();
 			this.ws = null;
 		}
@@ -150,18 +148,15 @@ class PresenceSocket {
 		this.reconnectAttempts = 0;
 	}
 
-	/**
-	 * Send a message to the server
-	 */
+	// Send a message to the server
+	 
 	private send(message: object): void {
 		if (this.ws?.readyState === WebSocket.OPEN) {
 			this.ws.send(JSON.stringify(message));
 		}
 	}
 
-	/**
-	 * Subscribe to a message type
-	 */
+	// Subscribe to a message type
 	on(type: string, handler: PresenceMessageHandler): () => void {
 		if (!this.handlers.has(type)) {
 			this.handlers.set(type, new Set());
@@ -173,24 +168,18 @@ class PresenceSocket {
 		};
 	}
 
-	/**
-	 * Emit a message to handlers
-	 */
+	// Emit a message to handlers
 	private emit(message: PresenceMessage): void {
 		this.handlers.get(message.type)?.forEach((handler) => handler(message));
 		this.handlers.get('*')?.forEach((handler) => handler(message));
 	}
 
-	/**
-	 * Check if connected
-	 */
+	// Check if connected
 	isConnected(): boolean {
 		return this.ws?.readyState === WebSocket.OPEN;
 	}
 
-	/**
-	 * Reset heartbeat timeout - called when we receive a ping
-	 */
+	// Reset heartbeat timeout - called when we receive a ping
 	private resetHeartbeatTimeout(): void {
 		this.clearHeartbeatTimeout();
 		// If we don't receive a ping within 60 seconds, assume connection is dead
@@ -202,9 +191,7 @@ class PresenceSocket {
 		}, 60000);
 	}
 
-	/**
-	 * Clear heartbeat timeout
-	 */
+	// Clear heartbeat timeout
 	private clearHeartbeatTimeout(): void {
 		if (this.heartbeatTimeout) {
 			clearTimeout(this.heartbeatTimeout);

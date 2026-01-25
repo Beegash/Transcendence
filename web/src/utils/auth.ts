@@ -1,7 +1,5 @@
-/**
- * Auth State Management
- * Handles user authentication state and token storage
- */
+// Auth State Management
+// Handles user authentication state and token storage
 
 import { api } from './api';
 import { router } from './router';
@@ -43,9 +41,7 @@ class AuthStore {
 		this.loadFromStorage();
 	}
 
-	/**
-	 * Load auth state from localStorage
-	 */
+	// Load auth state from localStorage
 	private loadFromStorage(): void {
 		try {
 			const token = localStorage.getItem('auth_token');
@@ -69,9 +65,7 @@ class AuthStore {
 		}
 	}
 
-	/**
-	 * Save auth state to localStorage
-	 */
+	// Save auth state to localStorage
 	private saveToStorage(): void {
 		if (this.state.token && this.state.user) {
 			localStorage.setItem('auth_token', this.state.token);
@@ -79,17 +73,13 @@ class AuthStore {
 		}
 	}
 
-	/**
-	 * Clear localStorage
-	 */
+	// Clear localStorage
 	private clearStorage(): void {
 		localStorage.removeItem('auth_token');
 		localStorage.removeItem('auth_user');
 	}
 
-	/**
-	 * Register a new user
-	 */
+	// Register a new user
 	async register(username: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
 		const result = await api.post<{ message: string; userId: number }>('/auth/register', {
 			username,
@@ -104,9 +94,7 @@ class AuthStore {
 		return { success: false, error: result.error };
 	}
 
-	/**
-	 * Login user
-	 */
+	// Login user
 	async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
 		const result = await api.post<{ user: User; token: string }>('/auth/login', {
 			email,
@@ -135,9 +123,7 @@ class AuthStore {
 		return { success: false, error: result.error };
 	}
 
-	/**
-	 * Logout user
-	 */
+	// Logout user
 	async logout(): Promise<void> {
 		// Disconnect presence socket first (sends logout message)
 		presenceSocket.disconnect(true);
@@ -158,9 +144,7 @@ class AuthStore {
 		router.navigate('/');
 	}
 
-	/**
-	 * Fetch current user from API
-	 */
+	// Fetch current user from API
 	async fetchCurrentUser(): Promise<boolean> {
 		if (!this.state.token) return false;
 
@@ -182,30 +166,25 @@ class AuthStore {
 		return false;
 	}
 
-	/**
-	 * Get current user
-	 */
+	// Get current user
 	getUser(): User | null {
 		return this.state.user;
 	}
 
-	/**
-	 * Get auth token
-	 */
+	// Get auth token
+	 //Get auth token
+	
 	getToken(): string | null {
 		return this.state.token;
 	}
 
-	/**
-	 * Check if user is authenticated
-	 */
+	// Check if user is authenticated
+	 
 	isAuthenticated(): boolean {
 		return this.state.isAuthenticated;
 	}
 
-	/**
-	 * Update user's language preference in state and localStorage
-	 */
+	// Update user's language preference in state and localStorage
 	updateUserLanguage(language: string): void {
 		if (this.state.user) {
 			this.state.user.language = language;
@@ -213,9 +192,7 @@ class AuthStore {
 		}
 	}
 
-	/**
-	 * Subscribe to auth state changes
-	 */
+	// Subscribe to auth state changes
 	subscribe(listener: () => void): () => void {
 		this.listeners.add(listener);
 		return () => this.listeners.delete(listener);
@@ -225,9 +202,7 @@ class AuthStore {
 		this.listeners.forEach((listener) => listener());
 	}
 
-	/**
-	 * Connect to presence WebSocket for online status tracking
-	 */
+	// Connect to presence WebSocket for online status tracking
 	private connectPresence(): void {
 		if (this.state.token) {
 			presenceSocket.connect(this.state.token).catch((err) => {
@@ -236,10 +211,8 @@ class AuthStore {
 		}
 	}
 
-	/**
-	 * Initialize presence connection if already authenticated
-	 * Should be called once on app startup
-	 */
+	// Initialize presence connection if already authenticated
+	// Should be called once on app startup
 	initPresence(): void {
 		if (this.state.isAuthenticated && this.state.token) {
 			this.connectPresence();
