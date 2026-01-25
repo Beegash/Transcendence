@@ -3,7 +3,7 @@ FROM nginx:alpine
 # Install openssl to generate self-signed certificates during build
 RUN apk add --no-cache openssl
 
-# Copy nginx configuration
+# Copy main nginx configuration file
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy certificate generation script and run it inside the image.
