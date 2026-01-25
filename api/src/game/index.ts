@@ -1,7 +1,4 @@
-/**
- * Game Module Index
- * Exports all game-related modules
- */
+// Game Module Index - Exports all game-related modules
 
 export * from './constants.js';
 export * from './types.js';

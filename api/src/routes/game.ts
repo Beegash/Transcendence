@@ -1,7 +1,4 @@
-/**
- * Game Routes (WebSocket)
- * Handles real-time game communication for multiplayer and AI
- */
+// Game Routes (WebSocket) - Handles real-time game communication for multiplayer and AI
 
 import { FastifyInstance } from 'fastify';
 import type { WebSocket } from 'ws';
@@ -20,17 +17,13 @@ interface WsMessage {
 }
 
 export default async function gameRoutes(fastify: FastifyInstance) {
-	/**
-	 * GET /rooms - List active rooms
-	 */
+	// GET /rooms - List active rooms
 	fastify.get('/rooms', async (_request, reply) => {
 		const rooms = roomManager.getActiveRooms();
 		return reply.send({ rooms });
 	});
 
-	/**
-	 * WebSocket /ws - Main game endpoint
-	 */
+	// WebSocket /ws - Main game endpoint
 	fastify.get('/ws', { websocket: true }, (connection, _req) => {
 		const ws = connection.socket;
 		const randomId = (Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');

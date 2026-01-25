@@ -87,10 +87,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /login
-	 * Authenticate user and return JWT token
-	 */
+	// POST /login - Authenticate user and return JWT token in cookie and response
 	fastify.post<{ Body: LoginBody }>(
 		'/login',
 		async (request: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) => {
@@ -164,10 +161,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /logout
-	 * Clear session and JWT cookie
-	 */
+	// POST /logout - Clear user session and JWT cookie
 	fastify.post('/logout', { preHandler: authMiddleware }, async (request, reply) => {
 		// Update online status
 		if (request.user) {
@@ -182,10 +176,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 		return reply.send({ message: 'Logged out successfully' });
 	});
 
-	/**
-	 * GET /me
-	 * Get current authenticated user
-	 */
+	// GET /me - Get profile and stats for the currently authenticated user
 	fastify.get('/me', { preHandler: authMiddleware }, async (request, reply) => {
 		if (!request.user) {
 			return reply.status(401).send({ error: 'Not authenticated' });

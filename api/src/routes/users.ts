@@ -171,10 +171,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /:id/password
-	 * Change user password
-	 */
+	// PUT /:id/password - Change authenticated user's password with verification
 	fastify.put<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>(
 		'/:id/password',
 		{ preHandler: authMiddleware },
@@ -236,10 +233,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /:id/matches
-	 * Get user's match history
-	 */
+	// GET /:id/matches - Get completed match history for a specific user
 	fastify.get<{ Params: { id: string }; Querystring: { limit?: string } }>(
 		'/:id/matches',
 		async (
@@ -294,10 +288,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /:id/friends
-	 * Get user's friend list
-	 */
+	// GET /:id/friends - Get list of accepted friends for a specific user
 	fastify.get<{ Params: { id: string } }>(
 		'/:id/friends',
 		{ preHandler: authMiddleware },
@@ -330,10 +321,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /:id/friends/requests
-	 * Get pending friend requests (received)
-	 */
+	// GET /:id/friends/requests - Get all pending incoming friend requests
 	fastify.get<{ Params: { id: string } }>(
 		'/:id/friends/requests',
 		{ preHandler: authMiddleware },
@@ -359,10 +347,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /:id/friends
-	 * Send friend request
-	 */
+	// POST /:id/friends - Send a new friend request to another user
 	fastify.post<{ Params: { id: string }; Body: { friendId: number } }>(
 		'/:id/friends',
 		{ preHandler: authMiddleware },
@@ -420,10 +405,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /:id/friends/:friendId
-	 * Accept or reject friend request
-	 */
+	// PUT /:id/friends/:friendId - Accept or reject a pending friend request
 	fastify.put<{ Params: { id: string; friendId: string }; Body: { action: 'accept' | 'reject' } }>(
 		'/:id/friends/:friendId',
 		{ preHandler: authMiddleware },
@@ -473,10 +455,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * DELETE /:id/friends/:friendId
-	 * Remove friend
-	 */
+	// DELETE /:id/friends/:friendId - Remove an existing friend relationship
 	fastify.delete<{ Params: { id: string; friendId: string } }>(
 		'/:id/friends/:friendId',
 		{ preHandler: authMiddleware },
@@ -505,10 +484,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /:id/avatar
-	 * Upload avatar image
-	 */
+	// POST /:id/avatar - Upload and update user profile picture (5MB limit)
 	fastify.post<{ Params: { id: string } }>(
 		'/:id/avatar',
 		{ preHandler: authMiddleware },
@@ -578,10 +554,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * DELETE /:id/avatar
-	 * Reset avatar to default and delete old file from disk (GDPR compliance)
-	 */
+	// DELETE /:id/avatar - Reset avatar to default and delete file from disk
 	fastify.delete<{ Params: { id: string } }>(
 		'/:id/avatar',
 		{ preHandler: authMiddleware },
@@ -623,10 +596,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /search
-	 * Search users by username or display name
-	 */
+	// GET /search - Search public users by username or display name (min 2 chars)
 	fastify.get<{ Querystring: { q: string } }>(
 		'/search',
 		{ preHandler: authMiddleware },
@@ -650,10 +620,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /notifications
-	 * Get current user's notifications
-	 */
+	// GET /notifications - Get list of current user's notifications (last 50)
 	fastify.get(
 		'/notifications',
 		{ preHandler: authMiddleware },
@@ -676,10 +643,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /notifications/:id/read
-	 * Mark notification as read
-	 */
+	// PUT /notifications/:id/read - Mark a specific notification as seen
 	fastify.put<{ Params: { id: string } }>(
 		'/notifications/:id/read',
 		{ preHandler: authMiddleware },
@@ -699,10 +663,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * GET /relationship/:targetId
-	 * Check relationship status between current user and target user
-	 */
+	// GET /relationship/:targetId - Check relationship status with another user
 	fastify.get<{ Params: { targetId: string } }>(
 		'/relationship/:targetId',
 		{ preHandler: authMiddleware },
@@ -742,10 +703,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * POST /invite/:targetId
-	 * Send a game invitation to a friend
-	 */
+	// POST /invite/:targetId - Send a Pong game invitation to a friend
 	fastify.post<{ Params: { targetId: string } }>(
 		'/invite/:targetId',
 		{ preHandler: authMiddleware },

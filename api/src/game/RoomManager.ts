@@ -1,7 +1,4 @@
-/**
- * Room Manager
- * Manages game rooms for multiplayer and AI games
- */
+// Room Manager - Manages game rooms for multiplayer and AI games
 
 import { WebSocket } from 'ws';
 import {
@@ -24,9 +21,7 @@ import { recordTournamentForfeit } from '../services/tournament.js';
 class RoomManager {
 	private rooms: Map<string, GameRoom> = new Map();
 
-	/**
-	 * Generate unique room ID
-	 */
+	// Generate unique 6-character room ID
 	private generateRoomId(): string {
 		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 		let id = '';
@@ -36,10 +31,7 @@ class RoomManager {
 		return id;
 	}
 
-	/**
-	 * Reset ball to center
-	 * @param direction Optional direction: 'left' sends ball to player1, 'right' to player2
-	 */
+	// Reset ball to center with optional direction (sends to loser after scoring)
 	private resetBall(direction?: 'left' | 'right'): Ball {
 		// First serve: random direction. After scoring: ball goes to loser
 		let directionX: number;
@@ -59,11 +51,7 @@ class RoomManager {
 		};
 	}
 
-	/**
-	 * Create new room for human vs human
-	 * @param tournamentId - Optional tournament ID for tournament matches
-	 * @param tournamentMatchId - Optional match ID for tournament matches
-	 */
+	// Create new room for human vs human matches
 	createRoom(
 		ws: WebSocket | null,
 		playerId: string,
@@ -114,9 +102,7 @@ class RoomManager {
 		return room;
 	}
 
-	/**
-	 * Create room for human vs AI
-	 */
+	// Create room for human vs AI (AI is always ready and doesn't need WebSocket)
 	createAIRoom(ws: WebSocket, playerId: string, userId?: number, username?: string): GameRoom {
 		const roomId = this.generateRoomId();
 
@@ -160,9 +146,7 @@ class RoomManager {
 		return room;
 	}
 
-	/**
-	 * Join existing room
-	 */
+	// Join existing room with private invite check and self-join prevention
 	joinRoom(roomId: string, ws: WebSocket, playerId: string, userId?: number, username?: string, forceSlot?: 1 | 2): GameRoom | null {
 		const room = this.rooms.get(roomId);
 		if (!room) return null;
@@ -219,16 +203,12 @@ class RoomManager {
 		return room;
 	}
 
-	/**
-	 * Get room by ID
-	 */
+	// Get room by ID
 	getRoom(roomId: string): GameRoom | null {
 		return this.rooms.get(roomId) || null;
 	}
 
-	/**
-	 * Start game
-	 */
+	// Start game and initialize loops (60fps game loop and 1s AI loop)
 	startGame(roomId: string): void {
 		const room = this.rooms.get(roomId);
 		if (!room || !room.player1 || !room.player2) return;
@@ -255,9 +235,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * Update game state
-	 */
+	// Update game state by applying movement and broadcasting updates to players
 	private updateGame(room: GameRoom): void {
 		if (room.state.status !== 'playing') return;
 		if (!room.player1 || !room.player2) return;
@@ -276,9 +254,7 @@ class RoomManager {
 		});
 	}
 
-	/**
-	 * Update ball position and handle collisions
-	 */
+	// Update ball position and handle wall/paddle collisions with speed increments
 	private updateBall(room: GameRoom): void {
 		const ball = room.state.ball;
 
@@ -381,9 +357,7 @@ class RoomManager {
 		});
 	}
 
-	/**
-	 * Check for winner
-	 */
+	// Check if a player has reached the WINNING_SCORE
 	private checkWinner(room: GameRoom): void {
 		if (room.state.score.player1 >= WINNING_SCORE) {
 			this.endGame(room, 1);
@@ -392,9 +366,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * End game
-	 */
+	// End game, stop loops, record results in database, and notify players
 	private endGame(room: GameRoom, winner: 1 | 2): void {
 		room.state.status = 'finished';
 		room.state.winner = winner;
@@ -458,9 +430,7 @@ class RoomManager {
 		setTimeout(() => this.deleteRoom(room.id), 30000);
 	}
 
-	/**
-	 * Update paddle position
-	 */
+	// Update paddle position within canvas bounds
 	updatePaddle(roomId: string, playerId: string, position: number): void {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
@@ -474,9 +444,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * Resume ball after pause (called when player presses space/touch after scoring)
-	 */
+	// Resume ball after scoring pause (called when player indicates readiness)
 	resumeBall(roomId: string): void {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
@@ -487,9 +455,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * Set player ready
-	 */
+	// Set player ready and auto-start game if both players are ready
 	setPlayerReady(roomId: string, playerId: string): void {
 		const room = this.rooms.get(roomId);
 		if (!room) return;
@@ -506,9 +472,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * Handle disconnect
-	 */
+	// Handle player disconnect by awarding forfeit win if game is in progress
 	handleDisconnect(ws: WebSocket): void {
 		for (const [roomId, room] of this.rooms) {
 			if (room.player1?.ws === ws || room.player2?.ws === ws) {
@@ -617,9 +581,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * Delete room
-	 */
+	// Delete room and clear any active loops
 	private deleteRoom(roomId: string): void {
 		const room = this.rooms.get(roomId);
 		if (room?.gameLoop) clearInterval(room.gameLoop);
@@ -628,9 +590,7 @@ class RoomManager {
 		console.log(`Room ${roomId} deleted`);
 	}
 
-	/**
-	 * Get client-safe state
-	 */
+	// Get minimal state required for client-side rendering
 	private getClientState(room: GameRoom): ClientGameState {
 		return {
 			ball: room.state.ball,
@@ -645,9 +605,7 @@ class RoomManager {
 		};
 	}
 
-	/**
-	 * Broadcast to players
-	 */
+	// Broadcast message to all connected human players in the room
 	private broadcast(room: GameRoom, message: object): void {
 		const data = JSON.stringify(message);
 		if (room.player1 && room.player1.ws && room.player1.ws.readyState === WebSocket.OPEN) {
@@ -659,9 +617,7 @@ class RoomManager {
 		}
 	}
 
-	/**
-	 * Get active rooms (excludes private invite rooms and tournament rooms)
-	 */
+	// Get list of active public rooms (excludes private and tournament rooms)
 	getActiveRooms(): Array<{ id: string; players: number; status: string; isVsAI: boolean }> {
 		const result: Array<{ id: string; players: number; status: string; isVsAI: boolean }> = [];
 		for (const [id, room] of this.rooms) {

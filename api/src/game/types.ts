@@ -1,7 +1,4 @@
-/**
- * Game Types
- * Shared interfaces for Pong game
- */
+// Game Types - Shared interfaces for Pong game components
 
 import { WebSocket } from 'ws';
 

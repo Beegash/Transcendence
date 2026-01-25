@@ -1,7 +1,4 @@
-/**
- * Game Constants
- * Shared configuration for Pong game
- */
+// Game Constants - Shared configuration for Pong game physics and rules
 
 // Canvas dimensions
 export const CANVAS_WIDTH = 800;
