@@ -37,7 +37,7 @@ export interface GameRoom {
 	createdAt: Date;
 	isVsAI: boolean;
 	invitedUserId?: number; // For private invite rooms - only this user can join
-	// Tournament fields
+
 	isTournament: boolean;
 	tournamentId?: number;
 	tournamentMatchId?: number;

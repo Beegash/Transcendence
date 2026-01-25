@@ -1,5 +1,3 @@
-// AI Player - Opponent that refreshes once per second and anticipates bounces (simulates human keyboard input without A*)
-
 import {
 	CANVAS_WIDTH,
 	CANVAS_HEIGHT,

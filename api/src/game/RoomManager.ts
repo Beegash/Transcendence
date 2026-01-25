@@ -1,5 +1,3 @@
-// Room Manager - Manages game rooms for multiplayer and AI games
-
 import { WebSocket } from 'ws';
 import {
 	CANVAS_WIDTH,
@@ -381,8 +379,6 @@ class RoomManager {
 		}
 
 		// Record match result in database
-		// IMPORTANT: Tournament matches are handled separately by the tournament service
-		// Recording them here would cause duplicate entries
 		if (!room.isTournament) {
 			try {
 				const player1Id = room.player1?.userId || null;
@@ -433,7 +429,7 @@ class RoomManager {
 	// Update paddle position within canvas bounds
 	updatePaddle(roomId: string, playerId: string, position: number): void {
 		const room = this.rooms.get(roomId);
-		if (!room) return; 
+		if (!room) return;
 
 		position = Math.max(0, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, position));
 
@@ -443,7 +439,7 @@ class RoomManager {
 			room.player2.paddleY = position;
 		}
 	}
- 
+
 	// Resume ball after scoring pause (called when player indicates readiness)
 	resumeBall(roomId: string): void {
 		const room = this.rooms.get(roomId);
@@ -458,7 +454,7 @@ class RoomManager {
 	// Set player ready and auto-start game if both players are ready
 	setPlayerReady(roomId: string, playerId: string): void {
 		const room = this.rooms.get(roomId);
-		if (!room) return; 
+		if (!room) return;
 
 		if (room.player1?.id === playerId) {
 			room.player1.ready = true;

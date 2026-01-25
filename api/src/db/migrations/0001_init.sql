@@ -1,6 +1,3 @@
--- Init Database Schema
-
--- Users table (extended for all modules)
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
