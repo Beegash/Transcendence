@@ -519,15 +519,9 @@ export function getBracket(tournamentId: number) {
 	};
 }
 
-/**
- * Handle user deletion/anonymization in tournaments (GDPR compliance)
- * - Updates aliases to unique format per participant (Deleted_xxx)
- * - Auto-forfeits any pending matches (opponent wins by walkover)
- * - Marks user as eliminated in active tournaments
- */
+// Handle user deletion or anonymization for GDPR compliance while maintaining bracket integrity
 export function handleUserDeletion(userId: number, newAlias: string): void {
-	// 1. Update alias in tournament_participants table with unique random alias per participant
-	// Using random hex ID to ensure uniqueness and anonymity (UNIQUE constraint on tournament_id, alias)
+	// Update participant aliases to a unique "Deleted_xxx" format to ensure uniqueness and anonymity
 	const participants = db.prepare(`
 		SELECT id, tournament_id FROM tournament_participants WHERE user_id = ?
 	`).all(userId) as { id: number; tournament_id: number }[];
@@ -542,7 +536,7 @@ export function handleUserDeletion(userId: number, newAlias: string): void {
 		`).run(uniqueAlias, participant.id);
 	}
 
-	// 2. Update alias in matches table (both player1 and player2)
+	// Update alias in matches table for both player slots
 	db.prepare(`
 		UPDATE matches 
 		SET player1_alias = ? 
@@ -555,7 +549,7 @@ export function handleUserDeletion(userId: number, newAlias: string): void {
 		WHERE player2_id = ?
 	`).run(newAlias, userId);
 
-	// 3. Find and auto-forfeit pending tournament matches where this user is a player
+	// Find and auto-forfeit pending tournament matches where this user is a player (opponent wins 5-0)
 	const pendingMatches = db.prepare(`
 		SELECT * FROM matches 
 		WHERE (player1_id = ? OR player2_id = ?) 

@@ -1,7 +1,4 @@
-/**
- * User Routes
- * Handles user profile operations
- */
+// User Routes - Handles user profile operations
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import db from '../db/index.js';
@@ -25,10 +22,7 @@ interface Notification {
 }
 
 export default async function userRoutes(fastify: FastifyInstance) {
-	/**
-	 * GET /:id
-	 * Get user profile by ID
-	 */
+	// GET /:id - Get user profile by ID
 	fastify.get<{ Params: { id: string } }>(
 		'/:id',
 		{ preHandler: optionalAuthMiddleware },
@@ -53,9 +47,10 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				return reply.status(404).send({ error: 'User not found' });
 			}
 
-			// Check if this is the current user's own profile
+			// Check if this is the current user's own profile to return private info like email
 			const isOwnProfile = request.user?.userId === userId;
 
+			// Basic public profile data
 			const response: Record<string, unknown> = {
 				id: user.id,
 				username: user.username,
@@ -77,7 +72,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 				},
 			};
 
-			// Include email only for own profile
+			// Include private fields like email and preferred language only for own profile
 			if (isOwnProfile) {
 				const fullUser = db.prepare('SELECT email, language FROM users WHERE id = ?').get(userId) as {
 					email: string;
@@ -93,10 +88,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 		}
 	);
 
-	/**
-	 * PUT /:id
-	 * Update user profile
-	 */
+	// PUT /:id - Update user profile
 	fastify.put<{ Params: { id: string }; Body: UpdateProfileBody }>(
 		'/:id',
 		{ preHandler: authMiddleware },
@@ -540,10 +532,8 @@ export default async function userRoutes(fastify: FastifyInstance) {
 					return reply.status(400).send({ error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' });
 				}
 
-				// Read file buffer
+				// Read file buffer into memory and generate unique filename with timestamp to prevent caching issues
 				const buffer = await data.toBuffer();
-
-				// Generate filename - normalize both jpeg and jpg MIME types to .jpg extension
 				let ext = data.mimetype.split('/')[1];
 				if (ext === 'jpeg' || ext === 'jpg') {
 					ext = 'jpg';
