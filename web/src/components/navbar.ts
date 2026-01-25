@@ -192,9 +192,30 @@ export function renderNavbar(): void {
             `}
           </div>
 
-          <!-- Mobile: User Avatar or Login -->
-          <div class="md:hidden">
+          <!-- Mobile: Notifications + User Avatar or Login -->
+          <div class="md:hidden flex items-center space-x-3">
             ${isLoggedIn ? `
+              <!-- Notifications Button (Mobile) -->
+              <div class="relative group" id="notifications-wrapper-mobile">
+                <button id="notifications-btn-mobile" class="relative text-white/80 hover:text-white p-1">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                  </svg>
+                  <span id="notification-badge-mobile" class="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full hidden">0</span>
+                </button>
+                <div id="notifications-dropdown-mobile" class="absolute right-0 top-full mt-2 w-80 bg-pong-dark border border-pong-light rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all max-h-96 overflow-y-auto z-50">
+                  <div class="p-3 border-b border-white/10 font-game text-xs text-white/60 uppercase">
+                    ${t('notifications.title')}
+                  </div>
+                  <div id="notifications-list-mobile" class="py-1">
+                    <div class="p-4 text-center text-white/40 text-sm">
+                      ${t('notifications.noNotifications')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- User Avatar -->
               <a href="/profile" data-link class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center border-2 border-pong-primary overflow-hidden">
                 ${user?.avatarUrl && user.avatarUrl !== '/default-avatar.png'
         ? `<img src="${user.avatarUrl}" alt="${user.displayName}" class="w-full h-full object-cover" />`
@@ -281,7 +302,7 @@ export function renderNavbar(): void {
     // Poll for notifications every 30 seconds
     const notificationInterval = setInterval(fetchNotifications, 30000);
 
-    // Mark system notifications as read when dropdown is opened
+    // Mark system notifications as read when dropdown is opened (Desktop)
     const notificationsBtn = document.getElementById('notifications-btn');
     if (notificationsBtn) {
       notificationsBtn.onclick = async () => {
@@ -304,26 +325,66 @@ export function renderNavbar(): void {
             }
           });
 
-          // Update badge count
-          const badge = document.getElementById('notification-badge');
-          if (badge) {
-            const currentCount = parseInt(badge.textContent || '0');
-            const newCount = Math.max(0, currentCount - unreadSystemNotifs.length);
-            if (newCount > 0) {
-              badge.textContent = newCount > 9 ? '9+' : newCount.toString();
-            } else {
-              badge.classList.add('hidden');
+          // Update badge count (both desktop and mobile)
+          updateBadgeCount(unreadSystemNotifs.length);
+        }
+      };
+    }
+
+    // Mark system notifications as read when dropdown is opened (Mobile)
+    const notificationsBtnMobile = document.getElementById('notifications-btn-mobile');
+    if (notificationsBtnMobile) {
+      notificationsBtnMobile.onclick = async () => {
+        const list = document.getElementById('notifications-list-mobile');
+        if (!list) return;
+
+        // Find unread system notifications
+        const unreadSystemNotifs = list.querySelectorAll('div[data-type="system"][data-status="unread"]');
+
+        if (unreadSystemNotifs.length > 0) {
+          const { api } = await import('../utils/api');
+          // Mark each as read
+          unreadSystemNotifs.forEach(async (el) => {
+            const id = el.getAttribute('data-id');
+            if (id) {
+              await api.put(`/users/notifications/${id}/read`, {});
+              // Update UI
+              el.setAttribute('data-status', 'read');
+              el.classList.remove('bg-pong-primary/5');
             }
-          }
+          });
+
+          // Update badge count (both desktop and mobile)
+          updateBadgeCount(unreadSystemNotifs.length);
         }
       };
     }
   }
 }
 
+function updateBadgeCount(decrement: number = 0): void {
+  const badge = document.getElementById('notification-badge');
+  const badgeMobile = document.getElementById('notification-badge-mobile');
+  
+  [badge, badgeMobile].forEach(b => {
+    if (b) {
+      const currentCount = parseInt(b.textContent || '0');
+      const newCount = Math.max(0, currentCount - decrement);
+      if (newCount > 0) {
+        b.textContent = newCount > 9 ? '9+' : newCount.toString();
+        b.classList.remove('hidden');
+      } else {
+        b.classList.add('hidden');
+      }
+    }
+  });
+}
+
 async function fetchNotifications(): Promise<void> {
   const badge = document.getElementById('notification-badge');
+  const badgeMobile = document.getElementById('notification-badge-mobile');
   const list = document.getElementById('notifications-list');
+  const listMobile = document.getElementById('notifications-list-mobile');
   const { api } = await import('../utils/api');
 
   try {
@@ -332,24 +393,28 @@ async function fetchNotifications(): Promise<void> {
       const notifications = result.data.notifications;
       const unreadCount = notifications.filter(n => n.status === 'unread').length;
 
-      // Update badge
-      if (badge) {
-        if (unreadCount > 0) {
-          badge.textContent = unreadCount > 9 ? '9+' : unreadCount.toString();
-          badge.classList.remove('hidden');
-        } else {
-          badge.classList.add('hidden');
+      // Update badge (both desktop and mobile)
+      [badge, badgeMobile].forEach(b => {
+        if (b) {
+          if (unreadCount > 0) {
+            b.textContent = unreadCount > 9 ? '9+' : unreadCount.toString();
+            b.classList.remove('hidden');
+          } else {
+            b.classList.add('hidden');
+          }
         }
-      }
+      });
 
-      // Update list
-      if (list) {
+      // Helper function to render notification list
+      const renderNotificationList = (listElement: HTMLElement | null) => {
+        if (!listElement) return;
+        
         if (notifications.length === 0) {
-          list.innerHTML = `<div class="p-4 text-center text-white/40 text-sm">${t('notifications.noNotifications')}</div>`;
+          listElement.innerHTML = `<div class="p-4 text-center text-white/40 text-sm">${t('notifications.noNotifications')}</div>`;
           return;
         }
 
-        list.innerHTML = notifications.map(n => `
+        listElement.innerHTML = notifications.map(n => `
           <div class="px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${n.status === 'unread' ? 'bg-pong-primary/5' : ''}" data-type="${n.type}" data-status="${n.status}" data-id="${n.id}">
             <div class="flex items-start gap-3">
               <div class="w-8 h-8 rounded-full bg-pong-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -393,19 +458,23 @@ async function fetchNotifications(): Promise<void> {
         `).join('');
 
         // Add event listeners for accept/decline buttons
-        list.querySelectorAll('.accept-friend-btn').forEach(btn => {
+        listElement.querySelectorAll('.accept-friend-btn').forEach(btn => {
           (btn as HTMLElement).onclick = (e) => handleFriendAction(e, 'accept');
         });
-        list.querySelectorAll('.decline-friend-btn').forEach(btn => {
+        listElement.querySelectorAll('.decline-friend-btn').forEach(btn => {
           (btn as HTMLElement).onclick = (e) => handleFriendAction(e, 'reject');
         });
-        list.querySelectorAll('.accept-game-btn').forEach(btn => {
+        listElement.querySelectorAll('.accept-game-btn').forEach(btn => {
           (btn as HTMLElement).onclick = (e) => handleGameInviteAction(e, 'accept');
         });
-        list.querySelectorAll('.decline-game-btn').forEach(btn => {
+        listElement.querySelectorAll('.decline-game-btn').forEach(btn => {
           (btn as HTMLElement).onclick = (e) => handleGameInviteAction(e, 'reject');
         });
-      }
+      };
+
+      // Update list (both desktop and mobile)
+      renderNotificationList(list);
+      renderNotificationList(listMobile);
     }
   } catch (err) {
     console.error('Failed to fetch notifications:', err);
