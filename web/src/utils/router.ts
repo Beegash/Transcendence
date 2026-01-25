@@ -1,7 +1,5 @@
-/**
- * ft_transcendence - SPA Router
- * Handles client-side routing with browser history support
- */
+// SPA Router
+// Handles client-side routing with browser history support
 
 export type RouteHandler = () => void | Promise<void>;
 
@@ -34,41 +32,31 @@ class Router {
 		});
 	}
 
-	/**
-	 * Register a route
-	 */
+	// Register a route
 	addRoute(path: string, handler: RouteHandler, title?: string): Router {
 		this.routes.set(path, { path, handler, title });
 		return this;
 	}
 
-	/**
-	 * Set 404 handler
-	 */
+	// Set 404 handler
 	setNotFound(handler: RouteHandler): Router {
 		this.notFoundHandler = handler;
 		return this;
 	}
 
-	/**
-	 * Navigate to a path
-	 */
+	// Navigate to a path
 	navigate(path: string): void {
 		window.history.pushState({}, '', path);
 		this.handleRoute();
 	}
 
-	/**
-	 * Replace current path without adding to history
-	 */
+	// Replace current path without adding to history
 	replace(path: string): void {
 		window.history.replaceState({}, '', path);
 		this.handleRoute();
 	}
 
-	/**
-	 * Handle the current route
-	 */
+	// Handle the current route
 	async handleRoute(): Promise<void> {
 		const path = window.location.pathname;
 		const route = this.routes.get(path);
@@ -92,9 +80,7 @@ class Router {
 		}
 	}
 
-	/**
-	 * Match dynamic routes with parameters
-	 */
+	// Match dynamic routes with parameters
 	private matchDynamicRoute(path: string): Route | null {
 		for (const [routePath, route] of this.routes) {
 			if (routePath.includes(':')) {
@@ -115,9 +101,7 @@ class Router {
 		return null;
 	}
 
-	/**
-	 * Get route parameters from current path
-	 */
+	// Get route parameters from current path
 	getParams(routePattern: string): Record<string, string> {
 		const path = window.location.pathname;
 		const routeParts = routePattern.split('/');
@@ -134,16 +118,12 @@ class Router {
 		return params;
 	}
 
-	/**
-	 * Get query parameters
-	 */
+	// Get query parameters
 	getQuery(): URLSearchParams {
 		return new URLSearchParams(window.location.search);
 	}
 
-	/**
-	 * Initialize router and handle initial route
-	 */
+	// Initialize router and handle initial route
 	init(): void {
 		this.handleRoute();
 	}

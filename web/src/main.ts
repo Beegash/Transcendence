@@ -1,7 +1,5 @@
-/**
- * ft_transcendence - Main Application Entry Point
- */
-
+// ft_transcendence - Main Application Entry Point
+       
 import { initBackground } from './components/background';
 import './styles/main.css';
 import { router } from './utils/router';
@@ -10,6 +8,7 @@ import { auth } from './utils/auth';
 import { renderHomePage } from './pages/home';
 import { renderLoginPage } from './pages/login';
 import { renderRegisterPage } from './pages/register';
+
 import { renderGamePage } from './pages/game';
 import { renderProfilePage } from './pages/profile';
 import { renderTournamentPage } from './pages/tournament';

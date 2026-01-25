@@ -186,7 +186,7 @@ async function setupRelationshipButton(targetUserId: number): Promise<void> {
   renderRelationshipButton(container, status, targetUserId);
 }
 
-// Setup avatar upload functionality
+// Setup avatar upload
 function setupAvatarUpload(userId: number): void {
   const uploadBtn = document.getElementById('avatar-upload-btn');
   const avatarInput = document.getElementById('avatar-input') as HTMLInputElement;
@@ -249,7 +249,7 @@ function setupAvatarUpload(userId: number): void {
         }
 
         console.log('Image dimensions OK, proceeding with upload...');
-        URL.revokeObjectURL(img.src); // Clean up
+        URL.revokeObjectURL(img.src);
       } catch (err) {
         console.error('Error checking image dimensions:', err);
         alert(t('errors.uploadFailed'));
