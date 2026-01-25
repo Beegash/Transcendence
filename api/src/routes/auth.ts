@@ -24,7 +24,7 @@ interface LoginBody {
 	email: string;
 	password: string;
 }
-
+ 
 export default async function authRoutes(fastify: FastifyInstance) {
 	// POST /register - Create a new user account with validation
 	fastify.post<{ Body: RegisterBody }>(
@@ -86,7 +86,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
 			}
 		}
 	);
-
+ 
 	// POST /login - Authenticate user and return JWT token in cookie and response
 	fastify.post<{ Body: LoginBody }>(
 		'/login',

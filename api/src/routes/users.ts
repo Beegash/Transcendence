@@ -100,7 +100,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 
 			if (isNaN(userId)) {
 				return reply.status(400).send({ error: 'Invalid user ID' });
-			}
+			} 
 
 			// Users can only update their own profile
 			if (request.user?.userId !== userId) {
@@ -174,7 +174,7 @@ export default async function userRoutes(fastify: FastifyInstance) {
 	// PUT /:id/password - Change authenticated user's password with verification
 	fastify.put<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>(
 		'/:id/password',
-		{ preHandler: authMiddleware },
+		{ preHandler: authMiddleware }, 
 		async (
 			request: FastifyRequest<{ Params: { id: string }; Body: { currentPassword: string; newPassword: string } }>,
 			reply: FastifyReply

@@ -1,7 +1,7 @@
 // Game Constants - Shared configuration for Pong game physics and rules
 
 // Canvas dimensions
-export const CANVAS_WIDTH = 800;
+export const CANVAS_WIDTH = 800; 
 export const CANVAS_HEIGHT = 400;
 
 // Paddle settings
@@ -14,7 +14,7 @@ export const BALL_SIZE = 10;
 export const BALL_SPEED = 10; // Increased from 5 for faster gameplay
 export const BALL_SPEED_INCREMENT = 0.3; // Speed increase per paddle hit
 export const BALL_MAX_SPEED = 30; // Cap to prevent unplayable speeds
-
+ 
 // Game rules
 export const WINNING_SCORE = 5;
 

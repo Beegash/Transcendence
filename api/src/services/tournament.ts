@@ -9,7 +9,7 @@ export interface Tournament {
 	name: string;
 	status: 'pending' | 'active' | 'completed' | 'cancelled';
 	max_players: number;
-	current_round: number;
+	current_round: number; 
 	created_by: number; // Mandatory for tournaments
 	winner_id: number | null;
 	started_at: string | null;
@@ -94,7 +94,7 @@ export function joinTournament(tournamentId: number, userId: number): Tournament
 	const userJoined = participants.some(p => p.user_id === userId);
 	if (userJoined) {
 		return null;
-	}
+	} 
 
 	const stmt = db.prepare(`
     INSERT INTO tournament_participants (tournament_id, user_id, alias, seed)

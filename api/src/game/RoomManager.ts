@@ -433,7 +433,7 @@ class RoomManager {
 	// Update paddle position within canvas bounds
 	updatePaddle(roomId: string, playerId: string, position: number): void {
 		const room = this.rooms.get(roomId);
-		if (!room) return;
+		if (!room) return; 
 
 		position = Math.max(0, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, position));
 
@@ -443,7 +443,7 @@ class RoomManager {
 			room.player2.paddleY = position;
 		}
 	}
-
+ 
 	// Resume ball after scoring pause (called when player indicates readiness)
 	resumeBall(roomId: string): void {
 		const room = this.rooms.get(roomId);
@@ -458,7 +458,7 @@ class RoomManager {
 	// Set player ready and auto-start game if both players are ready
 	setPlayerReady(roomId: string, playerId: string): void {
 		const room = this.rooms.get(roomId);
-		if (!room) return;
+		if (!room) return; 
 
 		if (room.player1?.id === playerId) {
 			room.player1.ready = true;
