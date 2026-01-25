@@ -370,14 +370,14 @@ export function renderSettingsPage(): void {
 
     if (result.success) {
       await auth.logout();
-      alert(t('settings.deleteSuccess'));
-      router.navigate('/');
+      alert(t('settings.deleteSuccess')); 
+      router.navigate('/'); 
     } else {
       alert(result.error || t('settings.deleteFailed'));
       confirmDeleteBtn.disabled = false;
       confirmDeleteBtn.textContent = t('common.delete');
     }
-    deleteModal?.classList.add('hidden');
+    deleteModal?.classList.add('hidden'); 
   });
 
   // Export Data button
@@ -391,12 +391,12 @@ export function renderSettingsPage(): void {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
-      });
+      });   
 
       if (response.ok) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement('a'); 
         a.href = url;
         a.download = 'pong_data.json';
         a.click();
@@ -405,7 +405,7 @@ export function renderSettingsPage(): void {
         alert('Failed to export data');
       }
     } catch {
-      alert('Failed to export data');
+      alert('Failed to export data'); 
     }
 
     btn.disabled = false;

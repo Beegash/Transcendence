@@ -72,6 +72,7 @@ export function renderLoginPage(): void {
 
     const formData = new FormData(form);
     const email = formData.get('email') as string;
+  
     const password = formData.get('password') as string;
 
     // Disable button and show loading
@@ -81,14 +82,14 @@ export function renderLoginPage(): void {
 
     const result = await auth.login(email, password);
 
-    if (result.success) {
+    if (result.success) { 
       // Redirect to home page
       router.navigate('/');
       renderNavbar(); // Update navbar to show user menu
     } else {
       // Show error
       errorDiv.textContent = result.error || 'Login failed';
-      errorDiv.classList.remove('hidden');
+      errorDiv.classList.remove('hidden');  
       loginBtn.disabled = false;
       loginBtn.textContent = t('auth.login');
     }
